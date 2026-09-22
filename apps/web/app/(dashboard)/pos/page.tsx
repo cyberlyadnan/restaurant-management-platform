@@ -25,6 +25,7 @@ import { useFloors, type RestaurantTable } from "@/hooks/use-tables";
 import { ApiError } from "@/lib/api";
 import { formatCurrency } from "@/lib/format";
 import { subtotalOf } from "@/lib/pricing-preview";
+import { cn } from "@/lib/utils";
 
 export default function PosPage() {
   return (
@@ -220,9 +221,14 @@ function PosPageInner() {
           <PosTablePicker floors={floors ?? []} onSelect={handleTablePick} />
         </Card>
       ) : (
-        <div className="grid flex-1 grid-cols-1 gap-4 overflow-hidden lg:grid-cols-[1fr_380px]">
-          {/* Menu Items Grid */}
-          <Card className="overflow-hidden p-4 sm:p-5 rounded-2xl border-border/80 shadow-xs">
+        <div className="grid flex-1 grid-cols-1 gap-4 overflow-hidden lg:grid-cols-[1fr_390px] xl:grid-cols-[1fr_420px]">
+          {/* Main Surface: ProductGrid (Desktop) or hidden on mobile when activeOrder is being checked out */}
+          <Card
+            className={cn(
+              "overflow-hidden rounded-2xl border-border/80 shadow-xs flex-col flex-1",
+              activeOrder ? "hidden lg:flex p-4 sm:p-5" : "flex p-4 sm:p-5",
+            )}
+          >
             <ProductGrid
               branchId={branchId}
               onSelect={handleSelect}
@@ -232,8 +238,25 @@ function PosPageInner() {
             />
           </Card>
 
-          {/* Right Panel: Cart or Checkout */}
-          <Card className="hidden lg:flex flex-col overflow-hidden p-4 sm:p-5 rounded-2xl border-border/80 shadow-xs">
+          {/* Mobile Full-Screen Checkout (if activeOrder on screens < lg) */}
+          {activeOrder && (
+            <Card className="flex lg:hidden flex-col overflow-hidden p-0 rounded-2xl border-border/80 shadow-xs flex-1">
+              <CheckoutPanel
+                order={activeOrder}
+                branchId={branchId}
+                initialCustomer={existingOrder?.customer}
+                onDone={resetForNewOrder}
+              />
+            </Card>
+          )}
+
+          {/* Desktop Right Panel: Cart or Checkout */}
+          <Card
+            className={cn(
+              "hidden lg:flex flex-col overflow-hidden rounded-2xl border-border/80 shadow-xs",
+              activeOrder ? "p-0" : "p-4 sm:p-5",
+            )}
+          >
             {activeOrder ? (
               <CheckoutPanel
                 order={activeOrder}

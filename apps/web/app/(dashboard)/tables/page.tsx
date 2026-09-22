@@ -380,7 +380,7 @@ export default function TablesPage() {
             {/* Main Presentation Surface */}
             {viewMode === "grid" && !editMode ? (
               /* RESPONSIVE GRID VIEW (Clean, Professional, Fully Responsive) */
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-5">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 min-[1900px]:grid-cols-5 gap-4 sm:gap-5">
                 {visibleTables.map((table) => (
                   <TableCard
                     key={table.id}

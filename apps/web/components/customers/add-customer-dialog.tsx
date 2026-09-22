@@ -19,9 +19,11 @@ import { ApiError } from "@/lib/api";
 export function AddCustomerDialog({
   branchId,
   onCreated,
+  trigger,
 }: {
   branchId: string | null;
   onCreated?: (customer: Customer) => void;
+  trigger?: React.ReactNode;
 }) {
   const [open, setOpen] = useState(false);
   const [name, setName] = useState("");
@@ -50,7 +52,15 @@ export function AddCustomerDialog({
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger render={<Button size="sm">New customer</Button>} />
+      <DialogTrigger
+        render={
+          trigger ? (
+            (trigger as React.ReactElement)
+          ) : (
+            <Button size="sm">New customer</Button>
+          )
+        }
+      />
       <DialogContent className="sm:max-w-sm">
         <form onSubmit={onSubmit} className="flex flex-col gap-4">
           <DialogHeader>
