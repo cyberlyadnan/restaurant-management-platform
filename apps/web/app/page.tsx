@@ -7,6 +7,7 @@ import { MarketingFooter } from "@/components/marketing/marketing-footer";
 import { MarketingNav } from "@/components/marketing/marketing-nav";
 import { ProductShowcase } from "@/components/marketing/product-showcase";
 import { SecuritySection } from "@/components/marketing/security-section";
+import { SaasCta } from "@/components/marketing/saas-cta";
 
 export default function MarketingHomePage() {
   return (
@@ -23,7 +24,7 @@ export default function MarketingHomePage() {
           <ProductShowcase />
           <Features />
           <SecuritySection />
-          <InstallSection />
+          <SaasCta />
         </main>
         <MarketingFooter />
       </div>

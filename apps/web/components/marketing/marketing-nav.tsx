@@ -8,9 +8,9 @@ import { Button } from "@/components/ui/button";
 import { downloadHref } from "@/lib/downloads";
 
 const links = [
-  { href: "#features", label: "Features" },
-  { href: "#security", label: "Security" },
-  { href: "#get-started", label: "Get started" },
+  { href: "/features", label: "Features" },
+  { href: "/pricing", label: "Pricing" },
+  { href: "/admin", label: "Platform Console" },
 ];
 
 export function MarketingNav() {
@@ -24,34 +24,35 @@ export function MarketingNav() {
           <span className="text-[15px] font-semibold tracking-tight text-foreground">
             OrderRestro
           </span>
+          <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+            SaaS
+          </span>
         </Link>
 
         <nav className="hidden items-center gap-8 md:flex">
           {links.map((l) => (
-            <a
+            <Link
               key={l.href}
               href={l.href}
-              className="text-sm text-muted-foreground transition-colors hover:text-foreground"
+              className="text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
             >
               {l.label}
-            </a>
+            </Link>
           ))}
         </nav>
 
-        <div className="hidden items-center gap-2 md:flex">
-          <a
-            href={downloadHref("github")}
-            className="inline-flex h-8 items-center gap-1.5 rounded-lg px-2.5 text-sm text-muted-foreground transition-colors hover:text-foreground"
+        <div className="hidden items-center gap-2.5 md:flex">
+          <Link
+            href="/login"
+            className="text-sm font-medium text-muted-foreground hover:text-foreground px-3 py-1.5"
           >
-            <Github className="size-4" />
-            GitHub
-          </a>
-          <Button variant="ghost" size="default" render={<Link href="/login" />}>
-            Sign in
-          </Button>
-          <Button variant="default" size="default" render={<Link href="/signup" />}>
-            Get started free
-          </Button>
+            Restaurant Login
+          </Link>
+          <Link href="/register">
+            <Button variant="default" size="default" className="bg-emerald-600 hover:bg-emerald-500 text-white font-semibold shadow-sm">
+              Start 14-Day Free Trial
+            </Button>
+          </Link>
         </div>
 
         <button
@@ -69,22 +70,26 @@ export function MarketingNav() {
         <div className="border-t border-border/60 px-4 pb-4 md:hidden">
           <nav className="flex flex-col gap-1 pt-2">
             {links.map((l) => (
-              <a
+              <Link
                 key={l.href}
                 href={l.href}
                 onClick={() => setOpen(false)}
                 className="rounded-lg px-2 py-2.5 text-sm text-muted-foreground hover:bg-muted hover:text-foreground"
               >
                 {l.label}
-              </a>
+              </Link>
             ))}
             <div className="mt-2 flex flex-col gap-2">
-              <Button variant="outline" render={<Link href="/login" />}>
-                Sign in
-              </Button>
-              <Button variant="default" render={<Link href="/signup" />}>
-                Get started free
-              </Button>
+              <Link href="/login">
+                <Button variant="outline" className="w-full">
+                  Restaurant Sign In
+                </Button>
+              </Link>
+              <Link href="/register">
+                <Button variant="default" className="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-semibold">
+                  Start 14-Day Free Trial
+                </Button>
+              </Link>
             </div>
           </nav>
         </div>

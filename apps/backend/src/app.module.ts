@@ -32,6 +32,9 @@ import { BackupModule } from './backup/backup.module';
 import { IntegrationsModule } from './integrations/integrations.module';
 import { McpModule } from './mcp/mcp.module';
 import { SystemModule } from './system/system.module';
+import { PlatformModule } from './platform/platform.module';
+import { EntitlementService } from './common/services/entitlement.service';
+import { SubscriptionGuard } from './common/guards/subscription.guard';
 
 @Module({
   imports: [
@@ -64,11 +67,14 @@ import { SystemModule } from './system/system.module';
     IntegrationsModule,
     McpModule,
     SystemModule,
+    PlatformModule,
   ],
   controllers: [AppController],
   providers: [
     AppService,
+    EntitlementService,
     { provide: APP_GUARD, useClass: ThrottlerGuard },
+    { provide: APP_GUARD, useClass: SubscriptionGuard },
     { provide: APP_FILTER, useClass: PrismaExceptionFilter },
   ],
 })

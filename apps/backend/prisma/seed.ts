@@ -449,6 +449,153 @@ async function main() {
     }
   }
 
+  console.log('Seeding SaaS Plans...');
+  const starterPlan = await prisma.plan.upsert({
+    where: { slug: 'starter' },
+    update: {},
+    create: {
+      name: 'Starter',
+      slug: 'starter',
+      description: 'Essential POS & table management for quick-service and single-location cafes',
+      monthlyPrice: 1499,
+      quarterlyPrice: 3999,
+      halfYearlyPrice: 7499,
+      yearlyPrice: 13499,
+      currency: 'INR',
+      trialDays: 14,
+      isActive: true,
+      isPopular: false,
+      sortOrder: 1,
+      maxBranches: 1,
+      maxUsers: 5,
+      maxTables: 15,
+      maxProducts: 150,
+      features: ['pos', 'kds', 'tables', 'menu', 'reports', 'receipt_print'],
+    },
+  });
+
+  const proPlan = await prisma.plan.upsert({
+    where: { slug: 'professional' },
+    update: {},
+    create: {
+      name: 'Professional',
+      slug: 'professional',
+      description: 'Full-featured restaurant management with inventory, recipes, CRM & live analytics',
+      monthlyPrice: 2999,
+      quarterlyPrice: 7999,
+      halfYearlyPrice: 14999,
+      yearlyPrice: 26999,
+      currency: 'INR',
+      trialDays: 14,
+      isActive: true,
+      isPopular: true,
+      sortOrder: 2,
+      maxBranches: 3,
+      maxUsers: 20,
+      maxTables: 60,
+      maxProducts: 600,
+      features: [
+        'pos',
+        'kds',
+        'tables',
+        'menu',
+        'reports',
+        'receipt_print',
+        'inventory',
+        'recipes',
+        'crm',
+        'loyalty',
+        'reservations',
+        'waitlist',
+        'analytics',
+      ],
+    },
+  });
+
+  await prisma.plan.upsert({
+    where: { slug: 'enterprise' },
+    update: {},
+    create: {
+      name: 'Enterprise',
+      slug: 'enterprise',
+      description: 'Multi-chain enterprise platform with unlimited scale, central procurement & custom integrations',
+      monthlyPrice: 5999,
+      quarterlyPrice: 15999,
+      halfYearlyPrice: 29999,
+      yearlyPrice: 53999,
+      currency: 'INR',
+      trialDays: 30,
+      isActive: true,
+      isPopular: false,
+      sortOrder: 3,
+      maxBranches: 20,
+      maxUsers: 100,
+      maxTables: 300,
+      maxProducts: 5000,
+      features: [
+        'pos',
+        'kds',
+        'tables',
+        'menu',
+        'reports',
+        'receipt_print',
+        'inventory',
+        'recipes',
+        'crm',
+        'loyalty',
+        'reservations',
+        'waitlist',
+        'analytics',
+        'procurement',
+        'multi_branch',
+        'api_access',
+        'audit_log',
+        'backup',
+        'custom_roles',
+      ],
+    },
+  });
+
+  console.log('Seeding Platform Super Admin...');
+  const platformPasswordHash = await bcrypt.hash('admin123456', 10);
+  await prisma.platformUser.upsert({
+    where: { email: 'admin@orderrestro.com' },
+    update: {},
+    create: {
+      name: 'Platform Super Admin',
+      email: 'admin@orderrestro.com',
+      passwordHash: platformPasswordHash,
+      role: 'SUPER_ADMIN',
+      isActive: true,
+    },
+  });
+
+  console.log('Ensuring all existing restaurants have active subscriptions...');
+  const allRestaurants = await prisma.restaurant.findMany({
+    include: { subscriptions: true },
+  });
+  const oneYearFromNow = new Date();
+  oneYearFromNow.setFullYear(oneYearFromNow.getFullYear() + 1);
+
+  for (const r of allRestaurants) {
+    if (r.subscriptions.length === 0) {
+      await prisma.subscription.create({
+        data: {
+          restaurantId: r.id,
+          planId: proPlan.id,
+          status: 'ACTIVE',
+          billingPeriod: 'YEARLY',
+          amount: 26999,
+          currency: r.currency || 'INR',
+          startDate: new Date(),
+          endDate: oneYearFromNow,
+          notes: 'Initial complimentary subscription for existing restaurant',
+        },
+      });
+      console.log(`Assigned Professional plan to restaurant: ${r.name} (${r.id})`);
+    }
+  }
+
   console.log('Seed complete.');
 }
 

@@ -16,29 +16,241 @@ datasource db {
 // Tenancy / Branch
 // ---------------------------------------------------------------------------
 
+enum RestaurantStatus {
+  ACTIVE
+  TRIAL
+  SUSPENDED
+  EXPIRED
+  PENDING_APPROVAL
+}
+
 model Restaurant {
-  id        String  @id @default(cuid())
+  id        String           @id @default(cuid())
   name      String
   legalName String?
-  currency  String  @default("INR")
-  timezone  String  @default("Asia/Kolkata")
+  currency  String           @default("INR")
+  timezone  String           @default("Asia/Kolkata")
+  status    RestaurantStatus @default(ACTIVE)
 
-  // Loyalty program config — previously hardcoded constants in
-  // OrdersService, now per-restaurant and settings-editable. Point value
-  // is the currency amount 1 redeemed point is worth; earn rate is how
-  // many currency units of net spend earn 1 point (floor division).
+  // SaaS Tenant Details
+  ownerName  String?
+  ownerEmail String?
+  ownerPhone String?
+  logoUrl    String?
+  taxId      String?
+
+  // Loyalty program config — per-restaurant settings
   loyaltyPointValue      Decimal @default(1) @db.Decimal(6, 2)
   loyaltyEarnPerCurrency Int     @default(100)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  branches           Branch[]
-  roles              Role[]
-  users              User[]
-  integrationApiKeys IntegrationApiKey[]
+  branches              Branch[]
+  roles                 Role[]
+  users                 User[]
+  integrationApiKeys    IntegrationApiKey[]
+  subscriptions         Subscription[]
+  subscriptionInvoices  SubscriptionInvoice[]
+  subscriptionPayments  SubscriptionPayment[]
+  auditLogs             AuditLog[]
 
   @@map("restaurants")
+}
+
+// ---------------------------------------------------------------------------
+// SaaS Platform Administration, Plans, Subscriptions & Invoicing
+// ---------------------------------------------------------------------------
+
+enum PlatformRole {
+  SUPER_ADMIN
+  PLATFORM_ADMIN
+  PLATFORM_SUPPORT
+  PLATFORM_FINANCE
+}
+
+model PlatformUser {
+  id           String       @id @default(cuid())
+  name         String
+  email        String       @unique
+  phone        String?
+  passwordHash String
+  role         PlatformRole @default(PLATFORM_ADMIN)
+  isActive     Boolean      @default(true)
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+
+  paymentsRecorded SubscriptionPayment[]
+  auditLogs        PlatformAuditLog[]
+
+  @@map("platform_users")
+}
+
+model Plan {
+  id               String   @id @default(cuid())
+  name             String
+  slug             String   @unique
+  description      String?
+  monthlyPrice     Decimal  @db.Decimal(12, 2)
+  quarterlyPrice   Decimal? @db.Decimal(12, 2)
+  halfYearlyPrice  Decimal? @db.Decimal(12, 2)
+  yearlyPrice      Decimal  @db.Decimal(12, 2)
+  currency         String   @default("INR")
+  trialDays        Int      @default(14)
+  isActive         Boolean  @default(true)
+  isPopular        Boolean  @default(false)
+  sortOrder        Int      @default(0)
+
+  // Operational limits
+  maxBranches Int @default(1)
+  maxUsers    Int @default(5)
+  maxTables   Int @default(20)
+  maxProducts Int @default(100)
+
+  // Entitlement feature keys
+  features String[] @default([])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  subscriptions Subscription[]
+
+  @@map("plans")
+}
+
+enum SubscriptionStatus {
+  TRIAL
+  ACTIVE
+  PAST_DUE
+  EXPIRED
+  SUSPENDED
+  CANCELLED
+}
+
+enum BillingPeriod {
+  MONTHLY
+  QUARTERLY
+  HALF_YEARLY
+  YEARLY
+  CUSTOM
+}
+
+model Subscription {
+  id            String             @id @default(cuid())
+  restaurantId  String
+  restaurant    Restaurant         @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  planId        String
+  plan          Plan               @relation(fields: [planId], references: [id], onDelete: Restrict)
+  status        SubscriptionStatus @default(TRIAL)
+  billingPeriod BillingPeriod      @default(MONTHLY)
+  amount        Decimal            @db.Decimal(12, 2)
+  currency      String             @default("INR")
+  startDate     DateTime           @default(now())
+  endDate       DateTime
+  trialEndsAt   DateTime?
+  cancelledAt   DateTime?
+  notes         String?
+  isAutoRenew   Boolean            @default(false)
+  createdAt     DateTime           @default(now())
+  updatedAt     DateTime           @updatedAt
+
+  payments SubscriptionPayment[]
+  invoices SubscriptionInvoice[]
+
+  @@index([restaurantId, status])
+  @@map("subscriptions")
+}
+
+enum SubscriptionPaymentMethod {
+  MANUAL_CASH
+  MANUAL_BANK_TRANSFER
+  MANUAL_UPI
+  MANUAL_CHEQUE
+  RAZORPAY
+  STRIPE
+}
+
+enum SubscriptionPaymentStatus {
+  SUCCESS
+  PENDING
+  FAILED
+  REFUNDED
+}
+
+model SubscriptionPayment {
+  id             String                    @id @default(cuid())
+  restaurantId   String
+  restaurant     Restaurant                @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  subscriptionId String?
+  subscription   Subscription?             @relation(fields: [subscriptionId], references: [id], onDelete: SetNull)
+  amount         Decimal                   @db.Decimal(12, 2)
+  currency       String                    @default("INR")
+  method         SubscriptionPaymentMethod
+  status         SubscriptionPaymentStatus @default(SUCCESS)
+  reference      String?
+  notes          String?
+  paymentDate    DateTime                  @default(now())
+
+  recordedById String?
+  recordedBy   PlatformUser? @relation(fields: [recordedById], references: [id], onDelete: SetNull)
+
+  createdAt DateTime @default(now())
+
+  invoices SubscriptionInvoice[]
+
+  @@index([restaurantId, status])
+  @@map("subscription_payments")
+}
+
+enum SubscriptionInvoiceStatus {
+  DRAFT
+  ISSUED
+  PAID
+  VOID
+  CANCELLED
+}
+
+model SubscriptionInvoice {
+  id             String                    @id @default(cuid())
+  invoiceNumber  String                    @unique
+  restaurantId   String
+  restaurant     Restaurant                @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  subscriptionId String?
+  subscription   Subscription?             @relation(fields: [subscriptionId], references: [id], onDelete: SetNull)
+  paymentId      String?
+  payment        SubscriptionPayment?      @relation(fields: [paymentId], references: [id], onDelete: SetNull)
+
+  billingPeriodStart DateTime?
+  billingPeriodEnd   DateTime?
+  subtotal           Decimal                   @db.Decimal(12, 2)
+  taxAmount          Decimal                   @default(0) @db.Decimal(12, 2)
+  discountAmount     Decimal                   @default(0) @db.Decimal(12, 2)
+  totalAmount        Decimal                   @db.Decimal(12, 2)
+  currency           String                    @default("INR")
+  status             SubscriptionInvoiceStatus @default(ISSUED)
+  issueDate          DateTime                  @default(now())
+  dueDate            DateTime?
+  paidAt             DateTime?
+  notes              String?
+  createdAt          DateTime                  @default(now())
+  updatedAt          DateTime                  @updatedAt
+
+  @@index([restaurantId, status])
+  @@map("subscription_invoices")
+}
+
+model PlatformAuditLog {
+  id             String        @id @default(cuid())
+  platformUserId String?
+  platformUser   PlatformUser? @relation(fields: [platformUserId], references: [id], onDelete: SetNull)
+  action         String
+  targetType     String
+  targetId       String?
+  metadata       Json?
+  createdAt      DateTime      @default(now())
+
+  @@index([targetType, targetId])
+  @@map("platform_audit_logs")
 }
 
 model Branch {
@@ -244,15 +456,18 @@ model UserBranch {
 }
 
 model AuditLog {
-  id        String   @id @default(cuid())
-  userId    String?
-  user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
-  action    String
-  entity    String
-  entityId  String?
-  metadata  Json?
-  createdAt DateTime @default(now())
+  id           String      @id @default(cuid())
+  restaurantId String?
+  restaurant   Restaurant? @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  userId       String?
+  user         User?       @relation(fields: [userId], references: [id], onDelete: SetNull)
+  action       String
+  entity       String
+  entityId     String?
+  metadata     Json?
+  createdAt    DateTime    @default(now())
 
+  @@index([restaurantId, createdAt])
   @@index([entity, entityId])
   @@map("audit_logs")
 }
