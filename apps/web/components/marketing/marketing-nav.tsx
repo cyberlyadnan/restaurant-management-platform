@@ -10,7 +10,6 @@ import { downloadHref } from "@/lib/downloads";
 const links = [
   { href: "/features", label: "Features" },
   { href: "/pricing", label: "Pricing" },
-  { href: "/admin", label: "Platform Console" },
 ];
 
 export function MarketingNav() {
