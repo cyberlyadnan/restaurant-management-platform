@@ -64,6 +64,8 @@ services:
     # off the LAN, shrinks attack surface).
     expose:
       - "4000"
+    ports:
+      - "4000:4000"
     volumes:
       - uploads_data:/data/uploads
       # Self-update support: docker.sock lets the backend spawn a one-shot
