@@ -1,15 +1,13 @@
 "use client";
 
 import type { SessionUser } from "@nodedr-restaurant/types";
-import { Menu } from "lucide-react";
 import { useState } from "react";
 import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
-import { NotificationBell } from "@/components/notifications/notification-bell";
 import { BrandFooter } from "./brand-footer";
 import { BranchSwitcher } from "./branch-switcher";
 import { Logo } from "./logo";
 import { SidebarNav } from "./sidebar-nav";
-import { UserMenu } from "./user-menu";
+import { TopHeader } from "./top-header";
 
 export function AppShell({
   user,
@@ -65,21 +63,7 @@ export function AppShell({
 
       {/* Main page content area - scrolls independently */}
       <div className="flex min-w-0 flex-1 flex-col h-dvh max-h-dvh overflow-hidden">
-        <header className="flex h-16 shrink-0 items-center justify-between border-b border-border bg-background/80 px-4 backdrop-blur sm:px-6 z-20">
-          <button
-            type="button"
-            onClick={() => setMobileOpen(true)}
-            className="flex h-9 w-9 items-center justify-center rounded-lg text-muted-foreground hover:bg-secondary lg:hidden"
-            aria-label="Open navigation"
-          >
-            <Menu className="h-5 w-5" />
-          </button>
-          <div className="hidden lg:block" />
-          <div className="flex items-center gap-1">
-            <NotificationBell />
-            <UserMenu user={user} />
-          </div>
-        </header>
+        <TopHeader user={user} onOpenMobileMenu={() => setMobileOpen(true)} />
         <main className="flex-1 min-h-0 overflow-y-auto p-4 sm:p-6 lg:p-8 overscroll-contain">{children}</main>
       </div>
     </div>
