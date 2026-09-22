@@ -68,6 +68,24 @@ export const publicOrderSchema = z.object({
 });
 export type PublicOrderDto = z.infer<typeof publicOrderSchema>;
 
+export const orderStatusSchema = z.enum([
+  "OPEN",
+  "PARTIALLY_PAID",
+  "BILLED",
+  "PAID",
+  "CANCELLED",
+]);
+export type OrderStatusDto = z.infer<typeof orderStatusSchema>;
+
+export const paymentEntrySchema = z.object({
+  method: paymentMethodSchema,
+  amount: z.coerce.number().positive(),
+  reference: z.string().optional(),
+  payerName: z.string().trim().max(60).optional(),
+  notes: z.string().trim().max(255).optional(),
+});
+export type PaymentEntryDto = z.infer<typeof paymentEntrySchema>;
+
 export const checkoutSchema = z.object({
   customerId: z.string().optional(),
   discountPercent: z.coerce.number().min(0).max(100).optional(),
@@ -75,17 +93,45 @@ export const checkoutSchema = z.object({
   tipAmount: z.coerce.number().min(0).optional(),
   loyaltyPointsToRedeem: z.number().int().min(0).optional(),
   giftCardCode: z.string().optional(),
-  payments: z
-    .array(
-      z.object({
-        method: paymentMethodSchema,
-        amount: z.coerce.number().positive(),
-        reference: z.string().optional(),
-      }),
-    )
-    .default([]),
+  splitType: z.enum(["EQUAL", "BY_ITEM", "CUSTOM"]).optional(),
+  payments: z.array(paymentEntrySchema).default([]),
 });
 export type CheckoutDto = z.infer<typeof checkoutSchema>;
+
+export const partialPaymentSchema = z.object({
+  payment: paymentEntrySchema,
+});
+export type PartialPaymentDto = z.infer<typeof partialPaymentSchema>;
+
+export interface SplitTicketDto {
+  payerName: string;
+  itemIds?: string[];
+  subtotal: number;
+  taxAmount: number;
+  discountAmount: number;
+  totalDue: number;
+  paymentMethod?: PaymentMethodDto;
+  isPaid?: boolean;
+}
+
+export interface SplitReceiptDto {
+  orderId: string;
+  orderNumber: string;
+  branchName: string;
+  tableNumber?: string;
+  payerName?: string;
+  splitInfo?: string;
+  items?: { name: string; quantity: number; unitPrice: number; lineTotal: number }[];
+  subtotal: number;
+  taxAmount: number;
+  discountAmount: number;
+  totalAmount: number;
+  paymentMethod: PaymentMethodDto;
+  paymentAmount: number;
+  changeAmount?: number;
+  paymentDate: string;
+  cashierName?: string;
+}
 
 export const refundSchema = z.object({
   amount: z.coerce.number().positive(),

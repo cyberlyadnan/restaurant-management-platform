@@ -48,10 +48,12 @@ export class EntitlementService {
   async assertActiveSubscription(restaurantId: string): Promise<void> {
     const isActive = await this.isSubscriptionActive(restaurantId);
     if (!isActive) {
-      throw new HttpException(
-        'Subscription is inactive, expired, or suspended. Please renew your subscription to perform this action.',
-        HttpStatus.PAYMENT_REQUIRED,
-      );
+      throw new ForbiddenException({
+        statusCode: HttpStatus.FORBIDDEN,
+        code: 'SUBSCRIPTION_SUSPENDED',
+        message:
+          'Subscription is inactive, expired, or suspended. Please renew your subscription to perform this action.',
+      });
     }
   }
 

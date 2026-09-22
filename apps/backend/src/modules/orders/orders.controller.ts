@@ -17,8 +17,10 @@ import {
   checkoutSchema,
   createOrderSchema,
   mergeOrdersSchema,
+  partialPaymentSchema,
   refundSchema,
   type CheckoutDto,
+  type PartialPaymentDto,
   type SessionUser,
 } from '@nodedr-restaurant/types';
 import { Auth } from '../../common/decorators/auth.decorator';
@@ -171,6 +173,31 @@ export class OrdersController {
       );
     }
     return this.ordersService.checkout(branchId, id, user.id, dto);
+  }
+
+  @Auth('bills.print')
+  @Post(':id/payments')
+  @UsePipes(new ZodValidationPipe(partialPaymentSchema))
+  async recordPartialPayment(
+    @CurrentUser() user: SessionUser,
+    @Query('branchId') branchId: string,
+    @Param('id') id: string,
+    @Body() body: PartialPaymentDto,
+  ) {
+    await this.branchAccess.assertAccess(user.restaurantId, branchId);
+    return this.ordersService.recordPartialPayment(branchId, id, user.id, body);
+  }
+
+  @Auth('bills.print')
+  @Get(':id/split-receipt')
+  async splitReceipt(
+    @CurrentUser() user: SessionUser,
+    @Query('branchId') branchId: string,
+    @Param('id') id: string,
+    @Query('paymentId') paymentId: string,
+  ) {
+    await this.branchAccess.assertAccess(user.restaurantId, branchId);
+    return this.ordersService.getSplitReceiptData(branchId, id, paymentId);
   }
 
   @Auth('bills.print')

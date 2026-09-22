@@ -15,9 +15,9 @@ import { io } from "socket.io-client";
 function resolveWsUrl(): string {
   if (process.env.NEXT_PUBLIC_WS_URL) return process.env.NEXT_PUBLIC_WS_URL;
   if (typeof window !== "undefined") {
-    return `${window.location.protocol}//${window.location.hostname}:4001`;
+    return `${window.location.protocol}//${window.location.hostname}:4000`;
   }
-  return "http://localhost:4001";
+  return "http://localhost:4000";
 }
 
 // One socket connection per mounted consumer, joined to the branch's room

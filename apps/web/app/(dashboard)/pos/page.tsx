@@ -12,6 +12,7 @@ import { KitchenProgressWidget } from "@/components/pos/kitchen-progress-widget"
 import { ModifierPickerDialog } from "@/components/pos/modifier-picker-dialog";
 import { PosTablePicker } from "@/components/pos/pos-table-picker";
 import { ProductGrid } from "@/components/pos/product-grid";
+import { ShiftStatusWidget } from "@/components/pos/shift-status-widget";
 import { Card } from "@/components/ui/card";
 import { useBranch } from "@/hooks/use-branch";
 import type { MenuItem } from "@/hooks/use-menu";
@@ -214,6 +215,7 @@ function PosPageInner() {
 
   return (
     <div className="relative flex h-[calc(100vh-7.5rem)] flex-col gap-3">
+      <ShiftStatusWidget branchId={branchId} />
       <KitchenProgressWidget branchId={branchId} />
 
       {showTablePicker ? (

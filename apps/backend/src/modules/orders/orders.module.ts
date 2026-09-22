@@ -4,11 +4,18 @@ import { BranchAccessService } from '../../common/services/branch-access.service
 import { NotificationsModule } from '../../notifications/notifications.module';
 import { GiftCardsModule } from '../gift-cards/gift-cards.module';
 import { InventoryModule } from '../inventory/inventory.module';
+import { ShiftsModule } from '../shifts/shifts.module';
 import { OrdersController } from './orders.controller';
 import { OrdersService } from './orders.service';
 
 @Module({
-  imports: [GiftCardsModule, InventoryModule, AuditModule, NotificationsModule],
+  imports: [
+    GiftCardsModule,
+    InventoryModule,
+    AuditModule,
+    NotificationsModule,
+    ShiftsModule,
+  ],
   controllers: [OrdersController],
   providers: [OrdersService, BranchAccessService],
   exports: [OrdersService],

@@ -1,6 +1,13 @@
 "use client";
 
-import type { AddOrderItemsDto, CheckoutDto, CreateOrderDto, RefundDto } from "@nodedr-restaurant/types";
+import type {
+  AddOrderItemsDto,
+  CheckoutDto,
+  CreateOrderDto,
+  PartialPaymentDto,
+  RefundDto,
+  SplitReceiptDto,
+} from "@nodedr-restaurant/types";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { Customer } from "@/hooks/use-customers";
 import { api } from "@/lib/api";
@@ -16,6 +23,7 @@ export interface CreatedOrder {
   loyaltyDiscountAmount: string;
   totalAmount: string;
   status: string;
+  payments?: { id: string; method: string; amount: number; payerName?: string; createdAt?: string }[];
 }
 
 export function useCreateOrder(branchId: string | null) {
@@ -37,7 +45,45 @@ export function useCheckoutOrder(branchId: string | null) {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["floors", branchId] });
       queryClient.invalidateQueries({ queryKey: ["dashboard", "summary", branchId] });
+      queryClient.invalidateQueries({ queryKey: ["shifts", "current", branchId] });
     },
+  });
+}
+
+export function useRecordPartialPayment(branchId: string | null) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ orderId, dto }: { orderId: string; dto: PartialPaymentDto }) =>
+      api.post<{
+        order: CreatedOrder;
+        payment: { id: string; method: string; amount: number; payerName?: string };
+        isFullyPaid: boolean;
+        totalPaid: number;
+        remainingDue: number;
+      }>(`/orders/${orderId}/payments?branchId=${branchId}`, dto),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["floors", branchId] });
+      queryClient.invalidateQueries({ queryKey: ["orders", branchId] });
+      queryClient.invalidateQueries({ queryKey: ["dashboard", "summary", branchId] });
+      queryClient.invalidateQueries({ queryKey: ["shifts", "current", branchId] });
+    },
+  });
+}
+
+export function useSplitReceipt(
+  branchId: string | null,
+  orderId: string | null,
+  paymentId: string | null,
+) {
+  return useQuery({
+    queryKey: ["orders", "split-receipt", branchId, orderId, paymentId],
+    queryFn: () => {
+      if (!branchId || !orderId || !paymentId) return null;
+      return api.get<SplitReceiptDto>(
+        `/orders/${orderId}/split-receipt?branchId=${branchId}&paymentId=${paymentId}`,
+      );
+    },
+    enabled: !!branchId && !!orderId && !!paymentId,
   });
 }
 

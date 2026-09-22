@@ -30,6 +30,25 @@ export class PermissionsSyncService implements OnModuleInit {
         create: permission,
       });
     }
+
+    // Purge deprecated or obsolete permissions (e.g. backup.manage, system.update)
+    const activeKeys = Array.from(new Set(PERMISSIONS.map((p) => p.key)));
+    const obsoletePermissions = await this.prisma.permission.findMany({
+      where: { key: { notIn: activeKeys } },
+    });
+    if (obsoletePermissions.length > 0) {
+      const obsoleteIds = obsoletePermissions.map((p) => p.id);
+      await this.prisma.rolePermission.deleteMany({
+        where: { permissionId: { in: obsoleteIds } },
+      });
+      await this.prisma.permission.deleteMany({
+        where: { id: { in: obsoleteIds } },
+      });
+      this.logger.log(
+        `Purged ${obsoletePermissions.length} obsolete permission(s) from database`,
+      );
+    }
+
     const allPermissions = await this.prisma.permission.findMany();
 
     const roles = await this.prisma.role.findMany({

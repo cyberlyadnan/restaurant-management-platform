@@ -28,12 +28,11 @@ import { PermissionsModule } from './permissions/permissions.module';
 import { AuditModule } from './audit/audit.module';
 import { RolesModule } from './roles/roles.module';
 import { NotificationsModule } from './notifications/notifications.module';
-import { BackupModule } from './backup/backup.module';
 import { IntegrationsModule } from './integrations/integrations.module';
 import { McpModule } from './mcp/mcp.module';
-import { SystemModule } from './system/system.module';
 import { PlatformModule } from './platform/platform.module';
 import { BillingModule } from './modules/billing/billing.module';
+import { ShiftsModule } from './modules/shifts/shifts.module';
 import { EntitlementService } from './common/services/entitlement.service';
 import { SubscriptionGuard } from './common/guards/subscription.guard';
 
@@ -64,19 +63,16 @@ import { SubscriptionGuard } from './common/guards/subscription.guard';
     AuditModule,
     RolesModule,
     NotificationsModule,
-    BackupModule,
     IntegrationsModule,
     McpModule,
-    SystemModule,
     PlatformModule,
     BillingModule,
+    ShiftsModule,
   ],
   controllers: [AppController],
   providers: [
     AppService,
-    EntitlementService,
     { provide: APP_GUARD, useClass: ThrottlerGuard },
-    { provide: APP_GUARD, useClass: SubscriptionGuard },
     { provide: APP_FILTER, useClass: PrismaExceptionFilter },
   ],
 })

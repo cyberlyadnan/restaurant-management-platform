@@ -17,3 +17,4 @@ export * from "./notifications";
 export * from "./backup";
 export * from "./integrations";
 export * from "./platform";
+export * from "./shifts";

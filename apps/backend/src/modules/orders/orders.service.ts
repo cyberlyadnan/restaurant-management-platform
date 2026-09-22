@@ -10,12 +10,15 @@ import type {
   CartItemDto,
   CheckoutDto,
   CreateOrderDto,
+  PartialPaymentDto,
   RefundDto,
+  SplitReceiptDto,
 } from '@nodedr-restaurant/types';
 import { AuditService } from '../../audit/audit.service';
 import { NotificationsService } from '../../notifications/notifications.service';
 import { GiftCardsService } from '../gift-cards/gift-cards.service';
 import { InventoryService } from '../inventory/inventory.service';
+import { ShiftsService } from '../shifts/shifts.service';
 import { PrismaService } from '../../prisma/prisma.service';
 import { RealtimeGateway } from '../../realtime/realtime.gateway';
 import { computeOrderTotals, priceLine, round2 } from './pricing';
@@ -31,12 +34,17 @@ export class OrdersService {
     private readonly inventory: InventoryService,
     private readonly audit: AuditService,
     private readonly notifications: NotificationsService,
+    private readonly shifts: ShiftsService,
   ) {}
 
   async listOpen(branchId: string, tableId?: string) {
     return this.prisma.order.findMany({
-      where: { branchId, status: 'OPEN', ...(tableId ? { tableId } : {}) },
-      include: { table: true, items: true, customer: true },
+      where: {
+        branchId,
+        status: { in: ['OPEN', 'PARTIALLY_PAID'] },
+        ...(tableId ? { tableId } : {}),
+      },
+      include: { table: true, items: true, customer: true, payments: true },
       orderBy: { createdAt: 'desc' },
     });
   }
@@ -371,12 +379,16 @@ export class OrdersService {
   ) {
     const order = await this.prisma.order.findFirst({
       where: { id: orderId, branchId },
-      include: { items: true, customer: true },
+      include: { items: true, customer: true, payments: true },
     });
     if (!order) throw new NotFoundException('Order not found');
-    if (order.status !== 'OPEN') {
+    if (order.status !== 'OPEN' && order.status !== 'PARTIALLY_PAID') {
       throw new BadRequestException('Order is not open for checkout');
     }
+
+    const previouslyPaid = round2(
+      order.payments.reduce((sum, p) => sum + Number(p.amount), 0),
+    );
 
     const branch = await this.prisma.branch.findUniqueOrThrow({
       where: { id: branchId },
@@ -491,38 +503,37 @@ export class OrdersService {
       }
 
       const totalCovered = round2(manualPaymentsTotal + giftCardAmountApplied);
-      if (totalCovered < totalDue) {
-        throw new BadRequestException(
-          `Payments (${totalCovered}) do not cover the total due (${totalDue})`,
+      const remainingToPay = round2(Math.max(0, totalDue - previouslyPaid));
+      const newTotalPaid = round2(previouslyPaid + totalCovered);
+      const isFullyPaid = newTotalPaid >= totalDue;
+      const finalStatus = isFullyPaid ? 'PAID' : 'PARTIALLY_PAID';
+
+      if (totalCovered <= 0 && remainingToPay > 0) {
+        throw new BadRequestException('At least one payment amount is required');
+      }
+
+      // Deduct recipe stock once when order is first paid/checked out
+      if (order.status === 'OPEN') {
+        await this.inventory.deductForOrderItems(
+          tx,
+          branchId,
+          userId,
+          order.items.map((item) => ({
+            menuItemId: item.menuItemId,
+            quantity: item.quantity,
+          })),
         );
       }
 
-      // Best-effort, non-blocking: deducts ingredient stock for whichever
-      // items have a recipe modeled (most won't yet). See
-      // InventoryService.deductForOrderItems for why this never throws on
-      // insufficient stock — a recipe-modeling gap must never be the reason
-      // a paid order fails to save.
-      await this.inventory.deductForOrderItems(
-        tx,
-        branchId,
-        userId,
-        order.items.map((item) => ({
-          menuItemId: item.menuItemId,
-          quantity: item.quantity,
-        })),
-      );
-
-      if (order.tableId) {
+      if (isFullyPaid && order.tableId) {
         await tx.table.update({
           where: { id: order.tableId },
           data: { status: 'AVAILABLE', statusSince: new Date() },
         });
       }
 
-      // Loyalty earn on net spend (excluding tip), only once the sale is
-      // actually paid — an atomic increment (race-free by construction, no
-      // read-then-write window) rather than a computed `set`.
-      if (effectiveCustomerId) {
+      // Loyalty earn on net spend (excluding tip), only once fully paid
+      if (isFullyPaid && effectiveCustomerId) {
         const netSpend = round2(totals.totalAmount - loyaltyDiscountAmount);
         const pointsEarned = Math.floor(netSpend / loyaltyEarnPerCurrency);
         if (pointsEarned > 0) {
@@ -533,23 +544,12 @@ export class OrdersService {
         }
       }
 
-      // Table update runs first so the nested `table` include below reflects
-      // the post-checkout status, not a stale pre-update snapshot.
-      //
-      // `status: 'OPEN'` in the where clause (an "extended where" filter,
-      // supported since Prisma 4.5 for update/delete on a unique record) is
-      // the actual concurrency guard: the initial `order.status !== 'OPEN'`
-      // check above ran outside this transaction, so two simultaneous
-      // checkout requests for the same order could otherwise both pass it
-      // and both reach here, producing two payment rows, a double inventory
-      // deduction, and double loyalty points. This update only succeeds if
-      // the row is still OPEN at commit time; Prisma throws P2025 (caught
-      // below) for the loser, and the whole transaction — including the
-      // gift card debit and loyalty point changes already applied above —
-      // rolls back with it.
+      // Record payments against current open register shift if present
+      await this.shifts.recordOrderPayment(tx, branchId, dto.payments);
+
       try {
         return await tx.order.update({
-          where: { id: orderId, status: 'OPEN' },
+          where: { id: orderId, status: { in: ['OPEN', 'PARTIALLY_PAID'] } },
           data: {
             ...(effectiveCustomerId && !order.customerId
               ? { customerId: effectiveCustomerId }
@@ -559,9 +559,17 @@ export class OrdersService {
             loyaltyDiscountAmount,
             tipAmount,
             totalAmount: totalDue,
-            status: 'PAID',
-            billedAt: new Date(),
-            payments: { create: dto.payments },
+            status: finalStatus,
+            billedAt: isFullyPaid ? new Date() : (order.billedAt ?? new Date()),
+            payments: {
+              create: dto.payments.map((p) => ({
+                method: p.method,
+                amount: p.amount,
+                reference: p.reference,
+                payerName: p.payerName,
+                notes: p.notes,
+              })),
+            },
           },
           include: { payments: true, table: true },
         });
@@ -632,6 +640,9 @@ export class OrdersService {
           createdById: userId,
         },
       });
+
+      // Record refund against current open register shift if present
+      await this.shifts.recordOrderRefund(tx, branchId, dto.method, dto.amount);
 
       if (dto.method === 'STORE_CREDIT' && order.customerId) {
         // Atomic increment, not read-then-write: two concurrent
@@ -926,5 +937,126 @@ export class OrdersService {
     });
     this.realtime.emitToBranch(branchId, 'kot.updated', updated);
     return updated;
+  }
+
+  async recordPartialPayment(
+    branchId: string,
+    orderId: string,
+    userId: string,
+    dto: PartialPaymentDto,
+  ) {
+    const order = await this.prisma.order.findFirst({
+      where: { id: orderId, branchId },
+      include: { payments: true, items: true, table: true },
+    });
+    if (!order) throw new NotFoundException('Order not found');
+    if (order.status !== 'OPEN' && order.status !== 'PARTIALLY_PAID') {
+      throw new BadRequestException('Order is not open for payment');
+    }
+
+    const alreadyPaid = round2(
+      order.payments.reduce((sum, p) => sum + Number(p.amount), 0),
+    );
+    const paymentAmount = round2(dto.payment.amount);
+    const totalDue = round2(Number(order.totalAmount));
+    const newTotalPaid = round2(alreadyPaid + paymentAmount);
+    const isFullyPaid = totalDue > 0 ? newTotalPaid >= totalDue : false;
+    const nextStatus = isFullyPaid ? 'PAID' : 'PARTIALLY_PAID';
+
+    return await this.prisma.$transaction(async (tx) => {
+      const createdPayment = await tx.payment.create({
+        data: {
+          orderId,
+          method: dto.payment.method,
+          amount: paymentAmount,
+          reference: dto.payment.reference,
+          payerName: dto.payment.payerName,
+          notes: dto.payment.notes,
+        },
+      });
+
+      // Update active shift drawer if payment has CASH
+      await this.shifts.recordOrderPayment(tx, branchId, [dto.payment]);
+
+      if (isFullyPaid && order.tableId) {
+        await tx.table.update({
+          where: { id: order.tableId },
+          data: { status: 'AVAILABLE', statusSince: new Date() },
+        });
+      }
+
+      const updatedOrder = await tx.order.update({
+        where: { id: orderId },
+        data: {
+          status: nextStatus,
+          billedAt: isFullyPaid ? new Date() : (order.billedAt ?? new Date()),
+        },
+        include: { payments: true, table: true, customer: true },
+      });
+
+      this.realtime.emitToBranch(branchId, 'order.updated', {
+        orderId,
+        status: nextStatus,
+        totalPaid: newTotalPaid,
+        remainingDue: Math.max(0, round2(totalDue - newTotalPaid)),
+        payment: createdPayment,
+      });
+
+      return {
+        order: updatedOrder,
+        payment: createdPayment,
+        isFullyPaid,
+        totalPaid: newTotalPaid,
+        remainingDue: Math.max(0, round2(totalDue - newTotalPaid)),
+      };
+    });
+  }
+
+  async getSplitReceiptData(
+    branchId: string,
+    orderId: string,
+    paymentId: string,
+  ): Promise<SplitReceiptDto> {
+    const order = await this.prisma.order.findFirst({
+      where: { id: orderId, branchId },
+      include: {
+        table: true,
+        customer: true,
+        items: { include: { modifiers: true } },
+        payments: true,
+        branch: { include: { restaurant: true } },
+      },
+    });
+    if (!order) throw new NotFoundException('Order not found');
+    const payment = order.payments.find((p) => p.id === paymentId);
+    if (!payment) throw new NotFoundException('Payment not found');
+
+    const paymentIndex =
+      order.payments.findIndex((p) => p.id === paymentId) + 1;
+
+    return {
+      orderId: order.id,
+      orderNumber: order.orderNumber,
+      branchName: order.branch.name,
+      tableNumber: order.table
+        ? (order.table.name ?? `#${order.table.number}`)
+        : undefined,
+      payerName: payment.payerName ?? `Guest #${paymentIndex}`,
+      splitInfo: `Split Payment ${paymentIndex} of ${order.payments.length}`,
+      items: order.items.map((item) => ({
+        name: item.nameSnapshot,
+        quantity: item.quantity,
+        unitPrice: Number(item.unitPriceSnapshot),
+        lineTotal: Number(item.lineTotal),
+      })),
+      subtotal: Number(order.subtotal),
+      taxAmount: Number(order.taxAmount),
+      discountAmount: Number(order.discountAmount),
+      totalAmount: Number(order.totalAmount),
+      paymentMethod: payment.method as any,
+      paymentAmount: Number(payment.amount),
+      paymentDate: payment.createdAt.toISOString(),
+      cashierName: order.customer?.name ?? 'Counter',
+    };
   }
 }

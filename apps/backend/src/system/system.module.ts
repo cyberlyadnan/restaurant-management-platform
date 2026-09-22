@@ -1,9 +1,6 @@
 import { Module } from '@nestjs/common';
-import { UpdateController } from './update.controller';
-import { UpdateService } from './update.service';
 
-@Module({
-  controllers: [UpdateController],
-  providers: [UpdateService],
-})
+// Decommissioned for multi-tenant security:
+// Host updates and container orchestration are strictly managed via CI/CD.
+@Module({})
 export class SystemModule {}

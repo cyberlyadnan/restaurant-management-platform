@@ -25,8 +25,8 @@ export const PERMISSIONS = [
   { key: "customers.manage", label: "Manage Customers & Loyalty", category: "CRM" },
   { key: "audit_log.view", label: "View Audit Log", category: "Admin" },
   { key: "roles.manage", label: "Manage Roles", category: "Admin" },
-  { key: "backup.manage", label: "Manage Backups", category: "Admin" },
-  { key: "system.update", label: "Manage App Updates", category: "Admin" },
+  { key: "cash_drawer.view", label: "View Cash Drawer & X-Reports", category: "POS" },
+  { key: "cash_drawer.manage", label: "Manage Register Shifts & Z-Reports", category: "POS" },
 ] as const;
 
 export type PermissionKey = (typeof PERMISSIONS)[number]["key"];
@@ -58,16 +58,17 @@ export const DEFAULT_ROLE_PERMISSIONS: Record<StaffRole, PermissionKey[]> = {
     "discounts.apply", "bills.print", "tables.manage", "menu.manage",
     "inventory.manage", "reports.access", "kds.manage",
     "reservations.manage", "customers.manage", "refunds.process",
+    "cash_drawer.view", "cash_drawer.manage",
   ],
   CASHIER: [
     "orders.create", "orders.edit", "bills.print", "discounts.apply",
-    "sales.view", "customers.manage",
+    "sales.view", "customers.manage", "cash_drawer.view", "cash_drawer.manage",
   ],
   WAITER: ["orders.create", "orders.edit", "tables.manage", "bills.print"],
   KITCHEN_STAFF: ["kds.manage"],
   CHEF: ["kds.manage", "menu.manage"],
   BARTENDER: ["orders.create", "kds.manage"],
   DELIVERY_STAFF: ["orders.edit"],
-  ACCOUNTANT: ["sales.view", "reports.access", "reports.financial.view", "data.export"],
+  ACCOUNTANT: ["sales.view", "reports.access", "reports.financial.view", "data.export", "cash_drawer.view"],
   INVENTORY_MANAGER: ["inventory.manage", "reports.access"],
 };
