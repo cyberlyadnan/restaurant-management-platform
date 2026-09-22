@@ -7,6 +7,7 @@ import {
 import type { CreateStaffDto, UpdateStaffDto } from '@nodedr-restaurant/types';
 import * as bcrypt from 'bcrypt';
 import { AuditService } from '../../audit/audit.service';
+import { EntitlementService } from '../../common/services/entitlement.service';
 import { PrismaService } from '../../prisma/prisma.service';
 
 const SELECT = {
@@ -26,6 +27,7 @@ export class UsersService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly audit: AuditService,
+    private readonly entitlement: EntitlementService,
   ) {}
 
   list(restaurantId: string) {
@@ -44,6 +46,7 @@ export class UsersService {
   }
 
   async create(restaurantId: string, actorId: string, dto: CreateStaffDto) {
+    await this.entitlement.assertLimit(restaurantId, 'users');
     await this.assertRoleInRestaurant(restaurantId, dto.roleId);
     await this.assertBranchesInRestaurant(restaurantId, dto.branchIds);
 

@@ -33,6 +33,7 @@ import { IntegrationsModule } from './integrations/integrations.module';
 import { McpModule } from './mcp/mcp.module';
 import { SystemModule } from './system/system.module';
 import { PlatformModule } from './platform/platform.module';
+import { BillingModule } from './modules/billing/billing.module';
 import { EntitlementService } from './common/services/entitlement.service';
 import { SubscriptionGuard } from './common/guards/subscription.guard';
 
@@ -68,6 +69,7 @@ import { SubscriptionGuard } from './common/guards/subscription.guard';
     McpModule,
     SystemModule,
     PlatformModule,
+    BillingModule,
   ],
   controllers: [AppController],
   providers: [

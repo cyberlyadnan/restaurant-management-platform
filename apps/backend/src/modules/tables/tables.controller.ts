@@ -25,6 +25,7 @@ import { Auth } from '../../common/decorators/auth.decorator';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { ZodValidationPipe } from '../../common/pipes/zod-validation.pipe';
 import { BranchAccessService } from '../../common/services/branch-access.service';
+import { EntitlementService } from '../../common/services/entitlement.service';
 import { TablesService } from './tables.service';
 
 @ApiTags('tables')
@@ -33,6 +34,7 @@ export class TablesController {
   constructor(
     private readonly tablesService: TablesService,
     private readonly branchAccess: BranchAccessService,
+    private readonly entitlement: EntitlementService,
   ) {}
 
   @Auth()
@@ -66,6 +68,7 @@ export class TablesController {
     @Body() body: unknown,
   ) {
     await this.branchAccess.assertAccess(user.restaurantId, branchId);
+    await this.entitlement.assertLimit(user.restaurantId, 'tables');
     return this.tablesService.createTable(branchId, body as never);
   }
 
@@ -78,6 +81,7 @@ export class TablesController {
     @Body() body: unknown,
   ) {
     await this.branchAccess.assertAccess(user.restaurantId, branchId);
+    await this.entitlement.assertLimit(user.restaurantId, 'tables');
     return this.tablesService.createTables(branchId, body as never);
   }
 

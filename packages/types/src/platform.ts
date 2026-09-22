@@ -235,3 +235,77 @@ export interface PlatformDashboardStats {
     revenue: number;
   }[];
 }
+
+export interface SubscriptionInvoiceDto {
+  id: string;
+  invoiceNumber: string;
+  subscriptionId: string;
+  restaurantId: string;
+  amount: number;
+  tax: number;
+  total: number;
+  currency: string;
+  status: "DRAFT" | "ISSUED" | "PAID" | "VOID" | "CANCELLED";
+  periodStart: string | Date;
+  periodEnd: string | Date;
+  dueDate: string | Date;
+  paidAt?: string | Date | null;
+  items?: unknown;
+  notes?: string | null;
+  createdAt: string | Date;
+}
+
+export interface SubscriptionPaymentDto {
+  id: string;
+  restaurantId: string;
+  subscriptionId?: string | null;
+  invoiceId?: string | null;
+  amount: number;
+  currency: string;
+  method: SubscriptionPaymentMethod;
+  status: "PENDING" | "COMPLETED" | "FAILED" | "REFUNDED";
+  reference?: string | null;
+  notes?: string | null;
+  createdAt: string | Date;
+}
+
+export const restaurantUpgradeSchema = z.object({
+  planSlug: z.string(),
+  billingPeriod: z.enum(BILLING_PERIODS).default("MONTHLY"),
+});
+export type RestaurantUpgradeDto = z.infer<typeof restaurantUpgradeSchema>;
+
+export interface RestaurantBillingOverview {
+  subscription: {
+    id: string;
+    status: SubscriptionStatus;
+    planName: string;
+    planSlug: string;
+    billingPeriod: BillingPeriod;
+    startDate: string;
+    endDate: string;
+    trialEndsAt: string | null;
+    daysRemaining: number;
+    isTrial: boolean;
+    isAutoRenew: boolean;
+  } | null;
+  plan: PlanDto | null;
+  usage: {
+    branches: number;
+    users: number;
+    tables: number;
+    products: number;
+  };
+  limits: {
+    maxBranches: number;
+    maxUsers: number;
+    maxTables: number;
+    maxProducts: number;
+  };
+  features: string[];
+  invoices: SubscriptionInvoiceDto[];
+  payments: SubscriptionPaymentDto[];
+  availablePlans: PlanDto[];
+}
+
+
