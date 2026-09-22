@@ -7,6 +7,7 @@ import { BrandFooter } from "./brand-footer";
 import { BranchSwitcher } from "./branch-switcher";
 import { Logo } from "./logo";
 import { SidebarNav } from "./sidebar-nav";
+import { SubscriptionBanner } from "./subscription-banner";
 import { TopHeader } from "./top-header";
 
 export function AppShell({
@@ -64,6 +65,7 @@ export function AppShell({
       {/* Main page content area - scrolls independently */}
       <div className="flex min-w-0 flex-1 flex-col h-dvh max-h-dvh overflow-hidden">
         <TopHeader user={user} onOpenMobileMenu={() => setMobileOpen(true)} />
+        <SubscriptionBanner />
         <main className="flex-1 min-h-0 overflow-y-auto p-4 sm:p-6 lg:p-8 overscroll-contain">{children}</main>
       </div>
     </div>

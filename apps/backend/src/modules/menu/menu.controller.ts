@@ -25,6 +25,7 @@ import { Auth } from '../../common/decorators/auth.decorator';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { ZodValidationPipe } from '../../common/pipes/zod-validation.pipe';
 import { BranchAccessService } from '../../common/services/branch-access.service';
+import { EntitlementService } from '../../common/services/entitlement.service';
 import {
   assertValidImageSignature,
   imageUploadOptions,
@@ -37,6 +38,7 @@ export class MenuController {
   constructor(
     private readonly menuService: MenuService,
     private readonly branchAccess: BranchAccessService,
+    private readonly entitlement: EntitlementService,
   ) {}
 
   // --- Categories ---------------------------------------------------------
@@ -146,6 +148,7 @@ export class MenuController {
     @Body() body: unknown,
   ) {
     await this.branchAccess.assertAccess(user.restaurantId, branchId);
+    await this.entitlement.assertLimit(user.restaurantId, 'products');
     return this.menuService.createItem(branchId, body as never);
   }
 

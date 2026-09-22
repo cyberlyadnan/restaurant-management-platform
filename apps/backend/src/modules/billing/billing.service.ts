@@ -39,30 +39,47 @@ export class BillingService {
     const latestSub = restaurant.subscriptions[0] ?? null;
     const now = new Date();
     const daysRemaining = latestSub
-      ? Math.max(0, Math.ceil((new Date(latestSub.endDate).getTime() - now.getTime()) / (1000 * 60 * 60 * 24)))
+      ? Math.max(
+          0,
+          Math.ceil(
+            (new Date(latestSub.endDate).getTime() - now.getTime()) /
+              (1000 * 60 * 60 * 24),
+          ),
+        )
       : 0;
 
-    const [branchCount, userCount, tableCount, productCount, invoices, payments, availablePlans] =
-      await Promise.all([
-        this.prisma.branch.count({ where: { restaurantId, isActive: true } }),
-        this.prisma.user.count({ where: { restaurantId, isActive: true } }),
-        this.prisma.table.count({ where: { floor: { branch: { restaurantId } } } }),
-        this.prisma.menuItem.count({ where: { branch: { restaurantId }, isActive: true } }),
-        this.prisma.subscriptionInvoice.findMany({
-          where: { restaurantId },
-          orderBy: { createdAt: 'desc' },
-          take: 20,
-        }),
-        this.prisma.subscriptionPayment.findMany({
-          where: { restaurantId },
-          orderBy: { createdAt: 'desc' },
-          take: 20,
-        }),
-        this.prisma.plan.findMany({
-          where: { isActive: true },
-          orderBy: { sortOrder: 'asc' },
-        }),
-      ]);
+    const [
+      branchCount,
+      userCount,
+      tableCount,
+      productCount,
+      invoices,
+      payments,
+      availablePlans,
+    ] = await Promise.all([
+      this.prisma.branch.count({ where: { restaurantId, isActive: true } }),
+      this.prisma.user.count({ where: { restaurantId, isActive: true } }),
+      this.prisma.table.count({
+        where: { floor: { branch: { restaurantId } } },
+      }),
+      this.prisma.menuItem.count({
+        where: { branch: { restaurantId }, isActive: true },
+      }),
+      this.prisma.subscriptionInvoice.findMany({
+        where: { restaurantId },
+        orderBy: { createdAt: 'desc' },
+        take: 20,
+      }),
+      this.prisma.subscriptionPayment.findMany({
+        where: { restaurantId },
+        orderBy: { createdAt: 'desc' },
+        take: 20,
+      }),
+      this.prisma.plan.findMany({
+        where: { isActive: true },
+        orderBy: { sortOrder: 'asc' },
+      }),
+    ]);
 
     const activePlan = latestSub?.plan ?? null;
 
@@ -76,7 +93,9 @@ export class BillingService {
             billingPeriod: latestSub.billingPeriod,
             startDate: latestSub.startDate.toISOString(),
             endDate: latestSub.endDate.toISOString(),
-            trialEndsAt: latestSub.trialEndsAt ? latestSub.trialEndsAt.toISOString() : null,
+            trialEndsAt: latestSub.trialEndsAt
+              ? latestSub.trialEndsAt.toISOString()
+              : null,
             daysRemaining,
             isTrial: latestSub.status === 'TRIAL',
             isAutoRenew: latestSub.isAutoRenew,
@@ -88,10 +107,14 @@ export class BillingService {
             name: activePlan.name,
             slug: activePlan.slug,
             description: activePlan.description,
-            monthlyPrice: activePlan.monthlyPrice,
-            quarterlyPrice: activePlan.quarterlyPrice,
-            halfYearlyPrice: activePlan.halfYearlyPrice,
-            yearlyPrice: activePlan.yearlyPrice,
+            monthlyPrice: Number(activePlan.monthlyPrice),
+            quarterlyPrice: activePlan.quarterlyPrice
+              ? Number(activePlan.quarterlyPrice)
+              : null,
+            halfYearlyPrice: activePlan.halfYearlyPrice
+              ? Number(activePlan.halfYearlyPrice)
+              : null,
+            yearlyPrice: Number(activePlan.yearlyPrice),
             currency: activePlan.currency,
             trialDays: activePlan.trialDays,
             isActive: activePlan.isActive,
@@ -129,18 +152,21 @@ export class BillingService {
       invoices: invoices.map((inv) => ({
         id: inv.id,
         invoiceNumber: inv.invoiceNumber,
-        subscriptionId: inv.subscriptionId,
+        subscriptionId: inv.subscriptionId ?? '',
         restaurantId: inv.restaurantId,
-        amount: inv.amount,
-        tax: inv.tax,
-        total: inv.total,
+        amount: Number(inv.subtotal),
+        tax: Number(inv.taxAmount),
+        total: Number(inv.totalAmount),
         currency: inv.currency,
         status: inv.status,
-        periodStart: inv.periodStart.toISOString(),
-        periodEnd: inv.periodEnd.toISOString(),
-        dueDate: inv.dueDate.toISOString(),
+        periodStart: inv.billingPeriodStart
+          ? inv.billingPeriodStart.toISOString()
+          : inv.createdAt.toISOString(),
+        periodEnd: inv.billingPeriodEnd
+          ? inv.billingPeriodEnd.toISOString()
+          : inv.createdAt.toISOString(),
+        dueDate: inv.dueDate ? inv.dueDate.toISOString() : inv.createdAt.toISOString(),
         paidAt: inv.paidAt ? inv.paidAt.toISOString() : null,
-        items: inv.items,
         notes: inv.notes,
         createdAt: inv.createdAt.toISOString(),
       })),
@@ -148,11 +174,10 @@ export class BillingService {
         id: pmt.id,
         restaurantId: pmt.restaurantId,
         subscriptionId: pmt.subscriptionId,
-        invoiceId: pmt.invoiceId,
-        amount: pmt.amount,
+        amount: Number(pmt.amount),
         currency: pmt.currency,
         method: pmt.method,
-        status: pmt.status,
+        status: pmt.status === 'SUCCESS' ? 'COMPLETED' : (pmt.status as any),
         reference: pmt.reference,
         notes: pmt.notes,
         createdAt: pmt.createdAt.toISOString(),
@@ -162,10 +187,10 @@ export class BillingService {
         name: p.name,
         slug: p.slug,
         description: p.description,
-        monthlyPrice: p.monthlyPrice,
-        quarterlyPrice: p.quarterlyPrice,
-        halfYearlyPrice: p.halfYearlyPrice,
-        yearlyPrice: p.yearlyPrice,
+        monthlyPrice: Number(p.monthlyPrice),
+        quarterlyPrice: p.quarterlyPrice ? Number(p.quarterlyPrice) : null,
+        halfYearlyPrice: p.halfYearlyPrice ? Number(p.halfYearlyPrice) : null,
+        yearlyPrice: Number(p.yearlyPrice),
         currency: p.currency,
         trialDays: p.trialDays,
         isActive: p.isActive,
@@ -192,17 +217,20 @@ export class BillingService {
     });
 
     if (!targetPlan || !targetPlan.isActive) {
-      throw new BadRequestException('Selected plan is invalid or no longer active');
+      throw new BadRequestException(
+        'Selected plan is invalid or no longer active',
+      );
     }
 
+    const monthlyNum = Number(targetPlan.monthlyPrice);
     const priceMap: Record<BillingPeriod, number> = {
-      MONTHLY: targetPlan.monthlyPrice,
-      QUARTERLY: targetPlan.quarterlyPrice,
-      HALF_YEARLY: targetPlan.halfYearlyPrice,
-      YEARLY: targetPlan.yearlyPrice,
-      CUSTOM: targetPlan.monthlyPrice,
+      MONTHLY: monthlyNum,
+      QUARTERLY: Number(targetPlan.quarterlyPrice ?? monthlyNum * 3),
+      HALF_YEARLY: Number(targetPlan.halfYearlyPrice ?? monthlyNum * 6),
+      YEARLY: Number(targetPlan.yearlyPrice),
+      CUSTOM: monthlyNum,
     };
-    const amount = priceMap[dto.billingPeriod] ?? targetPlan.monthlyPrice;
+    const amount = priceMap[dto.billingPeriod] ?? monthlyNum;
 
     const startDate = new Date();
     const endDate = new Date(startDate);
@@ -216,7 +244,6 @@ export class BillingService {
       endDate.setMonth(endDate.getMonth() + 1);
     }
 
-    // Generate invoice sequence
     const yearMonth = new Date().toISOString().slice(0, 7).replace('-', '');
     const countThisMonth = await this.prisma.subscriptionInvoice.count({
       where: {
@@ -228,56 +255,50 @@ export class BillingService {
     const invoiceNumber = `INV-${yearMonth}-${String(countThisMonth + 1).padStart(4, '0')}`;
 
     const result = await this.prisma.$transaction(async (tx) => {
-      // Create subscription
       const subscription = await tx.subscription.create({
         data: {
           restaurantId,
           planId: targetPlan.id,
           status: 'ACTIVE',
           billingPeriod: dto.billingPeriod,
+          amount,
+          currency: targetPlan.currency,
           startDate,
           endDate,
           isAutoRenew: true,
         },
       });
 
-      // Update restaurant status
       await tx.restaurant.update({
         where: { id: restaurantId },
         data: { status: 'ACTIVE' },
       });
 
-      // Generate invoice
       const invoice = await tx.subscriptionInvoice.create({
         data: {
           invoiceNumber,
           subscriptionId: subscription.id,
           restaurantId,
-          amount,
-          tax: 0,
-          total: amount,
+          subtotal: amount,
+          taxAmount: 0,
+          discountAmount: 0,
+          totalAmount: amount,
           currency: targetPlan.currency,
           status: 'ISSUED',
-          periodStart: startDate,
-          periodEnd: endDate,
+          billingPeriodStart: startDate,
+          billingPeriodEnd: endDate,
           dueDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
-          items: [
-            {
-              description: `${targetPlan.name} Plan (${dto.billingPeriod})`,
-              amount,
-            },
-          ],
+          notes: `${targetPlan.name} Plan (${dto.billingPeriod}) renewal`,
         },
       });
 
       return { subscription, invoice };
     });
 
-    await this.audit.log({
-      restaurantId,
-      actorId,
+    await this.audit.record({
+      userId: actorId,
       action: 'SUBSCRIPTION_UPGRADED',
-      entityType: 'Subscription',
+      entity: 'Subscription',
       entityId: result.subscription.id,
       metadata: {
         planName: targetPlan.name,
