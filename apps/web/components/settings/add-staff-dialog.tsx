@@ -120,17 +120,38 @@ export function AddStaffDialog() {
           </div>
 
           <div className="flex flex-col gap-2">
-            <Label>Role</Label>
+            <Label>Role & Permissions</Label>
             <Select value={roleId} onValueChange={(v) => setRoleId(v ?? "")}>
               <SelectTrigger>
-                <SelectValue placeholder="Select role" />
+                <SelectValue placeholder="Choose staff role (e.g. Waiter, Kitchen, Cashier)" />
               </SelectTrigger>
-              <SelectContent>
-                {roles?.map((role) => (
-                  <SelectItem key={role.id} value={role.id}>
-                    {role.label}
-                  </SelectItem>
-                ))}
+              <SelectContent className="max-h-72">
+                {roles?.map((role) => {
+                  const desc =
+                    role.name === "KITCHEN_STAFF"
+                      ? "Kitchen Display (KDS) access only"
+                      : role.name === "CHEF"
+                        ? "Kitchen Display & Menu editing"
+                        : role.name === "WAITER"
+                          ? "POS order taking, tables & receipt printing"
+                          : role.name === "CASHIER"
+                            ? "POS checkout, bills, payments & customers"
+                            : role.name === "RESTAURANT_MANAGER"
+                              ? "Floor, orders, refunds, inventory & reporting"
+                              : role.name === "ADMINISTRATOR" || role.name === "OWNER"
+                                ? "Full administrative system access"
+                                : role.name === "BARTENDER"
+                                  ? "Bar station orders & drink prep"
+                                  : role.label;
+                  return (
+                    <SelectItem key={role.id} value={role.id} className="py-2">
+                      <div className="flex flex-col text-left">
+                        <span className="font-semibold text-foreground">{role.label}</span>
+                        <span className="text-[11px] text-muted-foreground">{desc}</span>
+                      </div>
+                    </SelectItem>
+                  );
+                })}
               </SelectContent>
             </Select>
           </div>

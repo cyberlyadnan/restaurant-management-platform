@@ -32,5 +32,6 @@ export const NAV_ITEMS: NavItem[] = [
   { label: "Kitchen Display", href: "/kds", icon: ChefHat, permission: "kds.manage" },
   { label: "Customers", href: "/customers", icon: UsersRound, permission: "customers.manage" },
   { label: "Inventory", href: "/inventory", icon: Package, permission: "inventory.manage" },
+  { label: "Staff & Users", href: "/settings/staff", icon: UsersRound, permission: "users.manage" },
   { label: "Settings", href: "/settings", icon: Settings, permission: "settings.manage" },
 ];

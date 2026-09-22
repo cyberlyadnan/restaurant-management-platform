@@ -1,4 +1,4 @@
-import { CalendarPlus, ChefHat, LayoutGrid, ShoppingCart, UtensilsCrossed } from "lucide-react";
+import { CalendarPlus, ChefHat, LayoutGrid, ShoppingCart, UserPlus, UtensilsCrossed } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 
@@ -8,6 +8,7 @@ const ACTIONS = [
   { href: "/reservations", label: "New reservation", icon: CalendarPlus },
   { href: "/kds", label: "Kitchen display", icon: ChefHat },
   { href: "/menu", label: "Menu", icon: UtensilsCrossed },
+  { href: "/settings/staff", label: "Staff & Users", icon: UserPlus },
 ];
 
 // One-tap jumps into the flows staff reach for most during service — sits
