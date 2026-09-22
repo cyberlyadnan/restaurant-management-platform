@@ -14,9 +14,13 @@ import {
   bulkTableCreateSchema,
   floorSchema,
   floorUpdateSchema,
+  mergeTablesSchema,
+  moveTableSchema,
   tableSchema,
   tableUpdateSchema,
   tableLayoutUpdateSchema,
+  type MergeTablesDto,
+  type MoveTableDto,
   type SessionUser,
   type TableLayoutUpdateDto,
 } from '@nodedr-restaurant/types';
@@ -149,6 +153,54 @@ export class TablesController {
   ) {
     await this.branchAccess.assertAccess(user.restaurantId, branchId);
     return this.tablesService.rotateQrToken(branchId, id);
+  }
+
+  @Auth()
+  @Get(':id')
+  async getTable(
+    @CurrentUser() user: SessionUser,
+    @Query('branchId') branchId: string,
+    @Param('id') id: string,
+  ) {
+    await this.branchAccess.assertAccess(user.restaurantId, branchId);
+    return this.tablesService.getTable(branchId, id);
+  }
+
+  @Auth('tables.manage')
+  @Post(':id/move')
+  @UsePipes(new ZodValidationPipe(moveTableSchema))
+  async moveTable(
+    @CurrentUser() user: SessionUser,
+    @Query('branchId') branchId: string,
+    @Param('id') id: string,
+    @Body() body: MoveTableDto,
+  ) {
+    await this.branchAccess.assertAccess(user.restaurantId, branchId);
+    return this.tablesService.moveTable(branchId, id, body.targetTableId);
+  }
+
+  @Auth('tables.manage')
+  @Post(':id/merge')
+  @UsePipes(new ZodValidationPipe(mergeTablesSchema))
+  async mergeTables(
+    @CurrentUser() user: SessionUser,
+    @Query('branchId') branchId: string,
+    @Param('id') id: string,
+    @Body() body: MergeTablesDto,
+  ) {
+    await this.branchAccess.assertAccess(user.restaurantId, branchId);
+    return this.tablesService.mergeTables(branchId, body.targetTableId, id);
+  }
+
+  @Auth('tables.manage')
+  @Post(':id/unmerge')
+  async unmergeTable(
+    @CurrentUser() user: SessionUser,
+    @Query('branchId') branchId: string,
+    @Param('id') id: string,
+  ) {
+    await this.branchAccess.assertAccess(user.restaurantId, branchId);
+    return this.tablesService.unmergeTable(branchId, id);
   }
 
   @Auth('tables.manage')

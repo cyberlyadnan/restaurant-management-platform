@@ -530,6 +530,14 @@ export class OrdersService {
           where: { id: order.tableId },
           data: { status: 'AVAILABLE', statusSince: new Date() },
         });
+        await tx.table.updateMany({
+          where: { mergedWithTableId: order.tableId },
+          data: {
+            mergedWithTableId: null,
+            status: 'AVAILABLE',
+            statusSince: new Date(),
+          },
+        });
       }
 
       // Loyalty earn on net spend (excluding tip), only once fully paid
@@ -982,6 +990,14 @@ export class OrdersService {
         await tx.table.update({
           where: { id: order.tableId },
           data: { status: 'AVAILABLE', statusSince: new Date() },
+        });
+        await tx.table.updateMany({
+          where: { mergedWithTableId: order.tableId },
+          data: {
+            mergedWithTableId: null,
+            status: 'AVAILABLE',
+            statusSince: new Date(),
+          },
         });
       }
 

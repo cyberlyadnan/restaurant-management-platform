@@ -626,6 +626,11 @@ model Table {
   assignedWaiterId String?
   assignedWaiter   User?   @relation("TableWaiter", fields: [assignedWaiterId], references: [id], onDelete: SetNull)
 
+  // Merge table relations: when pushed together for large parties
+  mergedWithTableId String?
+  mergedWithTable   Table?   @relation("TableMerges", fields: [mergedWithTableId], references: [id], onDelete: SetNull)
+  mergedTables      Table[]  @relation("TableMerges")
+
   notes   String?
   qrToken String? @unique // opaque token embedded in the table's QR code (Phase 2+)
 
@@ -638,6 +643,7 @@ model Table {
 
   @@unique([floorId, number])
   @@index([floorId])
+  @@index([mergedWithTableId])
   @@map("tables")
 }
 

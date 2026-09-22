@@ -55,3 +55,19 @@ export const tableLayoutUpdateSchema = z.object({
   rotation: z.number(),
 });
 export type TableLayoutUpdateDto = z.infer<typeof tableLayoutUpdateSchema>;
+
+export const moveTableSchema = z.object({
+  targetTableId: z.string().min(1, "Target table is required"),
+});
+export type MoveTableDto = z.infer<typeof moveTableSchema>;
+
+export const mergeTablesSchema = z.object({
+  targetTableId: z.string().min(1, "Target table is required"),
+});
+export type MergeTablesDto = z.infer<typeof mergeTablesSchema>;
+
+export const unmergeTableSchema = z.object({
+  tableId: z.string().optional(),
+});
+export type UnmergeTableDto = z.infer<typeof unmergeTableSchema>;
+
