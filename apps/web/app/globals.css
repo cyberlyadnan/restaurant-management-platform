@@ -184,3 +184,40 @@
 .animate-pop-burst {
   animation: pop-burst 700ms cubic-bezier(0.22, 1, 0.36, 1) both;
 }
+
+/* Sonner toast close button styles & interactivity fix */
+[data-sonner-toaster] [data-close-button] {
+  position: absolute !important;
+  right: 10px !important;
+  top: 10px !important;
+  left: auto !important;
+  transform: none !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: 22px !important;
+  height: 22px !important;
+  border-radius: 9999px !important;
+  background-color: var(--background) !important;
+  border: 1px solid var(--border) !important;
+  color: var(--muted-foreground) !important;
+  cursor: pointer !important;
+  pointer-events: auto !important;
+  z-index: 100 !important;
+  opacity: 0.8 !important;
+  transition: all 0.15s ease-in-out !important;
+}
+
+[data-sonner-toaster] [data-close-button]:hover {
+  opacity: 1 !important;
+  color: var(--foreground) !important;
+  background-color: var(--secondary) !important;
+  transform: scale(1.08) !important;
+}
+
+[data-sonner-toaster] [data-close-button] svg {
+  width: 12px !important;
+  height: 12px !important;
+  pointer-events: none !important;
+  stroke-width: 2.2 !important;
+}
