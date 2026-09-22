@@ -6,8 +6,11 @@ export interface CartLine {
   quantity: number;
   modifierIds: string[];
   modifierLabel?: string;
+  isVeg?: boolean;
+  kitchenNote?: string;
 }
 
 export function cartLineKey(menuItemId: string, modifierIds: string[]): string {
   return `${menuItemId}::${[...modifierIds].sort().join(",")}`;
 }
+

@@ -1,6 +1,17 @@
 "use client";
 
-import { Minus, Plus, ShoppingCart, Trash2 } from "lucide-react";
+import {
+  AlertCircle,
+  ArrowRight,
+  Maximize2,
+  Minus,
+  Plus,
+  ShoppingBag,
+  Trash2,
+  UtensilsCrossed,
+} from "lucide-react";
+import { DietaryBadge } from "@/components/pos/dietary-badge";
+import type { CartLine } from "@/components/pos/cart-line";
 import { Button } from "@/components/ui/button";
 import {
   Select,
@@ -10,7 +21,6 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import type { CartLine } from "@/components/pos/cart-line";
 import type { RestaurantTable } from "@/hooks/use-tables";
 import { formatCurrency } from "@/lib/format";
 import { subtotalOf } from "@/lib/pricing-preview";
@@ -25,6 +35,7 @@ export function CartPanel({
   onIncrement,
   onDecrement,
   onRemove,
+  onOpenFullCart,
   onSubmit,
   isSubmitting,
   existingOrderNumber,
@@ -39,30 +50,37 @@ export function CartPanel({
   onIncrement: (key: string) => void;
   onDecrement: (key: string) => void;
   onRemove: (key: string) => void;
+  onOpenFullCart?: () => void;
   onSubmit: () => void;
   isSubmitting: boolean;
   existingOrderNumber?: string;
   onViewExistingOrder?: () => void;
 }) {
+  const totalQuantity = lines.reduce((acc, l) => acc + l.quantity, 0);
   const subtotal = subtotalOf(lines.map((l) => l.unitPrice * l.quantity));
   const canSubmit = lines.length > 0 && (orderType === "TAKEAWAY" || !!tableId) && !isSubmitting;
 
   return (
-    <div className="flex h-full flex-col gap-4">
-      <Tabs value={orderType} onValueChange={(v) => onOrderTypeChange(v as "DINE_IN" | "TAKEAWAY")}>
-        <TabsList className="w-full">
-          <TabsTrigger value="DINE_IN" className="flex-1">
+    <div className="flex h-full flex-col gap-3">
+      {/* Order Type Tabs */}
+      <Tabs
+        value={orderType}
+        onValueChange={(v) => onOrderTypeChange(v as "DINE_IN" | "TAKEAWAY")}
+      >
+        <TabsList className="w-full grid grid-cols-2">
+          <TabsTrigger value="DINE_IN" className="text-xs font-semibold">
             Dine-in
           </TabsTrigger>
-          <TabsTrigger value="TAKEAWAY" className="flex-1">
+          <TabsTrigger value="TAKEAWAY" className="text-xs font-semibold">
             Takeaway
           </TabsTrigger>
         </TabsList>
       </Tabs>
 
+      {/* Table Selector (Dine-in) */}
       {orderType === "DINE_IN" && (
         <Select value={tableId} onValueChange={(v) => onTableChange(v ?? "")}>
-          <SelectTrigger className="w-full">
+          <SelectTrigger className="w-full h-10 text-xs font-medium">
             <SelectValue placeholder="Select table">
               {(value: string | null) => {
                 const t = tables.find((table) => table.id === value);
@@ -73,7 +91,7 @@ export function CartPanel({
           </SelectTrigger>
           <SelectContent>
             {tables.map((t) => (
-              <SelectItem key={t.id} value={t.id}>
+              <SelectItem key={t.id} value={t.id} className="text-xs">
                 {t.name ?? `Table ${t.number}`} {t.status === "OCCUPIED" ? "(occupied)" : ""}
               </SelectItem>
             ))}
@@ -81,72 +99,90 @@ export function CartPanel({
         </Select>
       )}
 
+      {/* Open Order Notice */}
       {existingOrderNumber && (
-        <div className="flex items-center justify-between gap-3 rounded-lg bg-secondary/60 px-3 py-2 text-xs text-muted-foreground">
-          <span>
-            This table already has open order{" "}
-            <span className="font-medium text-foreground">#{existingOrderNumber}</span>
-            {lines.length > 0 && " — these items will be added to it as a new round."}
-          </span>
+        <div className="flex items-center justify-between gap-2 rounded-xl border border-blue-500/30 bg-blue-500/10 p-2.5 text-xs text-blue-700 dark:text-blue-300">
+          <div className="min-w-0">
+            <p className="font-semibold truncate">Active Order #{existingOrderNumber}</p>
+            <p className="text-[11px] opacity-80">New items fire as Round 2</p>
+          </div>
           {onViewExistingOrder && (
             <Button
               type="button"
               variant="outline"
               size="sm"
-              className="h-7 shrink-0 px-2 text-xs"
+              className="h-6 shrink-0 px-2 text-[11px] border-blue-500/30"
               onClick={onViewExistingOrder}
             >
-              View & pay
+              View Bill
             </Button>
           )}
         </div>
       )}
 
-      <div className="flex-1 overflow-y-auto">
+      {/* Cart Items List */}
+      <div className="flex-1 overflow-y-auto overscroll-contain pr-1">
         {lines.length === 0 ? (
-          <div className="flex h-full flex-col items-center justify-center gap-2 text-center text-muted-foreground">
-            <ShoppingCart className="h-8 w-8 opacity-40" />
-            <p className="text-sm">Cart is empty</p>
+          <div className="flex h-full flex-col items-center justify-center gap-2 text-center text-muted-foreground py-8">
+            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-muted/50 text-muted-foreground/60">
+              <ShoppingBag className="h-6 w-6" />
+            </div>
+            <p className="text-sm font-semibold text-foreground">Cart is empty</p>
+            <p className="text-xs text-muted-foreground max-w-[200px]">
+              Click <strong className="text-primary">+ ADD</strong> on any dish to start the order
+            </p>
           </div>
         ) : (
-          <div className="flex flex-col divide-y divide-border">
+          <div className="flex flex-col divide-y divide-border/60">
             {lines.map((line) => (
-              <div key={line.key} className="flex items-start justify-between gap-3 py-3">
-                <div className="flex-1">
-                  <p className="text-sm font-medium text-foreground">{line.name}</p>
-                  {line.modifierLabel && (
-                    <p className="text-xs text-muted-foreground">{line.modifierLabel}</p>
-                  )}
-                  <p className="mt-1 text-sm font-medium tabular-nums text-foreground">
-                    {formatCurrency(line.unitPrice * line.quantity)}
-                  </p>
+              <div key={line.key} className="flex items-start justify-between gap-2.5 py-2.5">
+                <div className="flex items-start gap-2 min-w-0 flex-1">
+                  <div className="mt-0.5">
+                    <DietaryBadge isVeg={line.isVeg ?? true} size="sm" />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-xs font-semibold text-foreground truncate">{line.name}</p>
+                    {line.modifierLabel && (
+                      <p className="text-[11px] text-muted-foreground font-medium truncate">
+                        {line.modifierLabel}
+                      </p>
+                    )}
+                    <p className="text-xs font-semibold tabular-nums text-foreground mt-0.5">
+                      {formatCurrency(line.unitPrice * line.quantity)}
+                    </p>
+                  </div>
                 </div>
-                <div className="flex items-center gap-1">
-                  <Button
-                    variant="outline"
-                    size="icon"
-                    className="h-7 w-7"
-                    onClick={() => onDecrement(line.key)}
-                  >
-                    <Minus className="h-3 w-3" />
-                  </Button>
-                  <span className="w-5 text-center text-sm tabular-nums">{line.quantity}</span>
-                  <Button
-                    variant="outline"
-                    size="icon"
-                    className="h-7 w-7"
-                    onClick={() => onIncrement(line.key)}
-                  >
-                    <Plus className="h-3 w-3" />
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-7 w-7 text-muted-foreground hover:text-destructive"
+
+                <div className="flex items-center gap-1.5 shrink-0">
+                  <div className="flex items-center rounded-lg border border-border/80 bg-muted/40 p-0.5">
+                    <button
+                      type="button"
+                      onClick={() => onDecrement(line.key)}
+                      className="flex h-6 w-6 items-center justify-center rounded-md hover:bg-muted text-muted-foreground hover:text-foreground"
+                      aria-label="Decrease quantity"
+                    >
+                      <Minus className="h-3 w-3" />
+                    </button>
+                    <span className="w-5 text-center text-xs font-bold tabular-nums">
+                      {line.quantity}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => onIncrement(line.key)}
+                      className="flex h-6 w-6 items-center justify-center rounded-md hover:bg-muted text-muted-foreground hover:text-foreground"
+                      aria-label="Increase quantity"
+                    >
+                      <Plus className="h-3 w-3" />
+                    </button>
+                  </div>
+
+                  <button
+                    type="button"
                     onClick={() => onRemove(line.key)}
+                    className="p-1 text-muted-foreground/60 hover:text-destructive transition-colors"
                   >
                     <Trash2 className="h-3.5 w-3.5" />
-                  </Button>
+                  </button>
                 </div>
               </div>
             ))}
@@ -154,19 +190,41 @@ export function CartPanel({
         )}
       </div>
 
-      <div className="flex flex-col gap-3 border-t border-border pt-4">
-        <div className="flex items-center justify-between text-sm">
-          <span className="text-muted-foreground">Subtotal (incl. tax)</span>
-          <span className="font-semibold tabular-nums text-foreground">
+      {/* Cart Summary & Action Buttons */}
+      <div className="flex flex-col gap-2.5 border-t border-border/70 pt-3">
+        <div className="flex items-center justify-between text-xs">
+          <span className="text-muted-foreground">
+            Total ({totalQuantity} {totalQuantity === 1 ? "item" : "items"})
+          </span>
+          <span className="text-base font-bold tabular-nums text-foreground">
             {formatCurrency(subtotal)}
           </span>
         </div>
-        <Button className="h-11" disabled={!canSubmit} onClick={onSubmit}>
+
+        {/* View Full Cart Button (Opens Modal) */}
+        {onOpenFullCart && lines.length > 0 && (
+          <Button
+            type="button"
+            variant="outline"
+            onClick={onOpenFullCart}
+            className="h-10 w-full rounded-xl border-primary/40 bg-primary/5 text-primary hover:bg-primary/10 text-xs font-bold flex items-center justify-center gap-2"
+          >
+            <Maximize2 className="h-3.5 w-3.5" />
+            <span>View Full Cart ({totalQuantity})</span>
+          </Button>
+        )}
+
+        {/* Fire to Kitchen Button */}
+        <Button
+          className="h-11 w-full rounded-xl font-bold text-xs sm:text-sm bg-primary text-primary-foreground shadow-sm hover:bg-primary/90"
+          disabled={!canSubmit}
+          onClick={onSubmit}
+        >
           {isSubmitting
             ? "Sending to kitchen…"
             : existingOrderNumber
-              ? "Add to order & send to kitchen"
-              : "Send to kitchen"}
+              ? `Add & Send to Kitchen`
+              : "Send to Kitchen (KOT)"}
         </Button>
       </div>
     </div>
