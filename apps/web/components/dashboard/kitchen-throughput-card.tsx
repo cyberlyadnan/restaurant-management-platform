@@ -31,7 +31,7 @@ export function KitchenThroughputCard({
     <Card className="flex flex-col gap-4 p-6 border-border/80 shadow-xs relative overflow-hidden">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-rose-500/10 text-rose-600 dark:text-rose-400">
+          <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary/10 text-primary">
             <ChefHat className="h-4 w-4" />
           </div>
           <div>

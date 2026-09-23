@@ -93,7 +93,7 @@ export function RevenueAnalyticsChart({
   return (
     <Card className="flex flex-col gap-4 p-6 border-border/80 shadow-xs relative overflow-hidden">
       {/* Decorative gradient glow top border */}
-      <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-primary via-rose-500 to-amber-500" />
+      <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-primary via-emerald-400 to-teal-500" />
 
       {/* Header controls & stats */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">

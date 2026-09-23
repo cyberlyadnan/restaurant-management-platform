@@ -52,9 +52,9 @@ export default function PublicFeaturesPage() {
         "Station filtering for multi-chef kitchen coordination",
         "Direct kitchen notes and item-level modifications",
       ],
-      color: "text-rose-400",
-      bg: "bg-rose-500/10",
-      border: "border-rose-500/20",
+      color: "text-emerald-400",
+      bg: "bg-emerald-500/10",
+      border: "border-emerald-500/20",
     },
     {
       icon: LayoutGrid,

@@ -51,78 +51,77 @@
 }
 
 :root {
-  /* Nodedr OrderRestro — light palette. See DESIGN_SYSTEM.md for rationale
-     (wine/burgundy primary is the one deliberate accent choice). */
+  /* Unified Enterprise Color Palette — Emerald Green Base */
   --background: #FAFAFA;
-  --foreground: #111827;
+  --foreground: #0F172A;
   --card: #FFFFFF;
-  --card-foreground: #111827;
+  --card-foreground: #0F172A;
   --popover: #FFFFFF;
-  --popover-foreground: #111827;
-  --primary: #9F1239;
+  --popover-foreground: #0F172A;
+  --primary: #059669;
   --primary-foreground: #FFFFFF;
-  --secondary: #F4F4F5;
-  --secondary-foreground: #111827;
-  --muted: #F4F4F5;
-  --muted-foreground: #6B7280;
-  --accent: #FDF2F4;
-  --accent-foreground: #9F1239;
+  --secondary: #F1F5F9;
+  --secondary-foreground: #0F172A;
+  --muted: #F1F5F9;
+  --muted-foreground: #64748B;
+  --accent: #ECFDF5;
+  --accent-foreground: #047857;
   --destructive: #EF4444;
-  --success: #22C55E;
+  --success: #10B981;
   --warning: #F59E0B;
-  --border: #E5E7EB;
-  --input: #E5E7EB;
-  --ring: #9F1239;
-  --chart-1: #9F1239;
-  --chart-2: #22C55E;
+  --border: #E2E8F0;
+  --input: #E2E8F0;
+  --ring: #059669;
+  --chart-1: #059669;
+  --chart-2: #10B981;
   --chart-3: #F59E0B;
-  --chart-4: #6366F1;
-  --chart-5: #6B7280;
-  --radius: 1rem;
+  --chart-4: #0EA5E9;
+  --chart-5: #64748B;
+  --radius: 0.75rem;
   --sidebar: #FCFCFC;
-  --sidebar-foreground: #111827;
-  --sidebar-primary: #9F1239;
+  --sidebar-foreground: #0F172A;
+  --sidebar-primary: #059669;
   --sidebar-primary-foreground: #FFFFFF;
-  --sidebar-accent: #FDF2F4;
-  --sidebar-accent-foreground: #9F1239;
-  --sidebar-border: #E5E7EB;
-  --sidebar-ring: #9F1239;
+  --sidebar-accent: #ECFDF5;
+  --sidebar-accent-foreground: #047857;
+  --sidebar-border: #E2E8F0;
+  --sidebar-ring: #059669;
 }
 
 .dark {
-  --background: #0B0B0D;
-  --foreground: #F4F4F5;
-  --card: #151517;
-  --card-foreground: #F4F4F5;
-  --popover: #151517;
-  --popover-foreground: #F4F4F5;
-  --primary: #FB7185;
-  --primary-foreground: #1F0A0F;
-  --secondary: #1D1D20;
-  --secondary-foreground: #F4F4F5;
-  --muted: #1D1D20;
-  --muted-foreground: #9CA3AF;
-  --accent: #2A151A;
-  --accent-foreground: #FB7185;
+  --background: #090D16;
+  --foreground: #F8FAFC;
+  --card: #0F172A;
+  --card-foreground: #F8FAFC;
+  --popover: #0F172A;
+  --popover-foreground: #F8FAFC;
+  --primary: #10B981;
+  --primary-foreground: #022C22;
+  --secondary: #1E293B;
+  --secondary-foreground: #F8FAFC;
+  --muted: #1E293B;
+  --muted-foreground: #94A3B8;
+  --accent: #064E3B;
+  --accent-foreground: #34D399;
   --destructive: #F87171;
   --success: #34D399;
   --warning: #FBBF24;
-  --border: #26262A;
-  --input: #26262A;
-  --ring: #FB7185;
-  --chart-1: #FB7185;
+  --border: #1E293B;
+  --input: #1E293B;
+  --ring: #10B981;
+  --chart-1: #10B981;
   --chart-2: #34D399;
   --chart-3: #FBBF24;
-  --chart-4: #818CF8;
-  --chart-5: #9CA3AF;
-  --sidebar: #111113;
-  --sidebar-foreground: #F4F4F5;
-  --sidebar-primary: #FB7185;
-  --sidebar-primary-foreground: #1F0A0F;
-  --sidebar-accent: #2A151A;
-  --sidebar-accent-foreground: #FB7185;
-  --sidebar-border: #26262A;
-  --sidebar-ring: #FB7185;
+  --chart-4: #38BDF8;
+  --chart-5: #94A3B8;
+  --sidebar: #090D16;
+  --sidebar-foreground: #F8FAFC;
+  --sidebar-primary: #10B981;
+  --sidebar-primary-foreground: #022C22;
+  --sidebar-accent: #064E3B;
+  --sidebar-accent-foreground: #34D399;
+  --sidebar-border: #1E293B;
+  --sidebar-ring: #10B981;
 }
 
 @layer base {
@@ -137,13 +136,7 @@
   }
 }
 
-/* This app is designed to run on a counter/kitchen tablet, not just a desk
-   with a mouse. The component library's default control heights (h-7/h-8,
-   ~28-32px) are comfortable with a pointer's pixel-precise click but too
-   small to reliably tap — Apple/Google both put the minimum comfortable
-   touch target around 44px. Gated on `pointer: coarse` (a real touchscreen,
-   not just a narrow viewport) so mouse-driven desktop use keeps the denser
-   layout the design system was built around. */
+/* Touchscreen target min sizes for tablets/kiosks */
 @media (pointer: coarse) {
   button,
   [role="button"],
@@ -163,10 +156,6 @@
   }
 }
 
-/* Small celebratory burst on the QR order confirmation screen — see
-   components/order/pop-burst.tsx. Each particle rotates to its own
-   --angle, then the keyframes only need to translate outward along one
-   axis for every particle to fan out in a circle. */
 @keyframes pop-burst {
   0% {
     transform: rotate(var(--angle)) translateY(0) scale(0);
@@ -185,7 +174,7 @@
   animation: pop-burst 700ms cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
-/* Sonner toast close button styles & interactivity fix */
+/* Sonner toast close button styles */
 [data-sonner-toaster] [data-close-button] {
   position: absolute !important;
   right: 10px !important;
