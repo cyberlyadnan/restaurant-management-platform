@@ -2,6 +2,7 @@
 
 import type { TableStatusDto } from "@nodedr-restaurant/types";
 import {
+  ArrowRightLeft,
   CheckCircle2,
   Clock,
   Merge,
@@ -10,11 +11,13 @@ import {
   QrCode,
   Receipt,
   Sparkles,
+  Split,
   Users,
   Utensils,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -25,11 +28,17 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { useUpdateTableStatus, type RestaurantTable } from "@/hooks/use-tables";
+import {
+  useUnmergeTable,
+  useUpdateTableStatus,
+  type RestaurantTable,
+} from "@/hooks/use-tables";
+import { ApiError } from "@/lib/api";
 import { cn } from "@/lib/utils";
 import { BillTableDialog } from "./bill-table-dialog";
 import { ElapsedTimer } from "./elapsed-timer";
 import { MergeTableDialog } from "./merge-table-dialog";
+import { MoveTableDialog } from "./move-table-dialog";
 import { TableQrDialog } from "./table-qr-dialog";
 import { TableShapeIcon } from "./table-shape-icon";
 
@@ -99,8 +108,10 @@ export function TableCard({
 }) {
   const router = useRouter();
   const updateStatus = useUpdateTableStatus(branchId);
+  const unmergeTable = useUnmergeTable(branchId);
   const [qrOpen, setQrOpen] = useState(false);
   const [mergeOpen, setMergeOpen] = useState(false);
+  const [moveOpen, setMoveOpen] = useState(false);
   const [billOpen, setBillOpen] = useState(false);
 
   const config = STATUS_CONFIG[table.status];
@@ -173,7 +184,7 @@ export function TableCard({
                 >
                   <MoreVertical className="h-4 w-4" />
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-48">
+                <DropdownMenuContent align="end" className="w-52">
                   <div className="px-2 py-1 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
                     Set Table Status
                   </div>
@@ -199,9 +210,30 @@ export function TableCard({
                     Table QR Code
                   </DropdownMenuItem>
                   {table.status === "OCCUPIED" && (
-                    <DropdownMenuItem onClick={() => setMergeOpen(true)} className="text-xs">
-                      <Merge className="mr-2 h-3.5 w-3.5" />
-                      Merge with table
+                    <>
+                      <DropdownMenuItem onClick={() => setMoveOpen(true)} className="text-xs">
+                        <ArrowRightLeft className="mr-2 h-3.5 w-3.5 text-primary" />
+                        Move / Transfer Table
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => setMergeOpen(true)} className="text-xs">
+                        <Merge className="mr-2 h-3.5 w-3.5 text-primary" />
+                        Merge with table
+                      </DropdownMenuItem>
+                    </>
+                  )}
+                  {table.mergedWithTableId && (
+                    <DropdownMenuItem
+                      onClick={() =>
+                        unmergeTable.mutate(table.id, {
+                          onSuccess: () => toast.success("Table unmerged successfully"),
+                          onError: (err) =>
+                            toast.error(err instanceof ApiError ? err.message : "Could not unmerge table"),
+                        })
+                      }
+                      className="text-xs text-rose-600 dark:text-rose-400"
+                    >
+                      <Split className="mr-2 h-3.5 w-3.5" />
+                      Unmerge Table
                     </DropdownMenuItem>
                   )}
                 </DropdownMenuContent>
@@ -209,8 +241,8 @@ export function TableCard({
             </div>
           </div>
 
-          {/* Row 2: Capacity & Shape Info Tags */}
-          <div className="flex items-center gap-2 text-xs">
+          {/* Row 2: Capacity & Shape Info Tags + Merged Badges */}
+          <div className="flex flex-wrap items-center gap-1.5 text-xs">
             <span className="inline-flex items-center gap-1 font-semibold bg-muted/60 text-foreground px-2 py-0.5 rounded-md text-[11px]">
               <Users className="h-3 w-3 text-muted-foreground" />
               {table.capacity} Guests
@@ -218,6 +250,20 @@ export function TableCard({
             <span className="inline-flex items-center bg-muted/40 text-muted-foreground font-medium px-2 py-0.5 rounded-md text-[11px] capitalize">
               {table.shape} Table
             </span>
+
+            {table.mergedWithTable && (
+              <Badge variant="outline" className="bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/30 text-[10px] font-bold gap-1">
+                <Merge className="h-3 w-3" />
+                Linked to T{table.mergedWithTable.number}
+              </Badge>
+            )}
+
+            {table.mergedTables && table.mergedTables.length > 0 && (
+              <Badge variant="outline" className="bg-primary/10 text-primary border-primary/30 text-[10px] font-bold gap-1">
+                <Merge className="h-3 w-3" />
+                Merged (+{table.mergedTables.map((m) => `T${m.number}`).join(", ")})
+              </Badge>
+            )}
           </div>
 
           {/* Row 3: Dynamic Table Status Pill */}
@@ -355,6 +401,13 @@ export function TableCard({
       </Card>
 
       <TableQrDialog table={table} branchId={branchId} open={qrOpen} onOpenChange={setQrOpen} />
+      <MoveTableDialog
+        branchId={branchId}
+        table={table}
+        allTables={allTables}
+        open={moveOpen}
+        onOpenChange={setMoveOpen}
+      />
       <MergeTableDialog
         branchId={branchId}
         table={table}

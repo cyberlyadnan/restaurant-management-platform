@@ -1,15 +1,17 @@
 "use client";
 
+import { Merge, Users } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { useMergeOrder, useOpenOrders } from "@/hooks/use-orders";
-import type { RestaurantTable } from "@/hooks/use-tables";
+import { useOpenOrders } from "@/hooks/use-orders";
+import { useMergeTable, type RestaurantTable } from "@/hooks/use-tables";
 import { ApiError } from "@/lib/api";
 import { formatCurrency } from "@/lib/format";
 
@@ -27,62 +29,86 @@ export function MergeTableDialog({
   onOpenChange: (open: boolean) => void;
 }) {
   const { data: openOrders } = useOpenOrders(branchId);
-  const merge = useMergeOrder(branchId);
+  const mergeTable = useMergeTable(branchId);
 
-  const thisOrder = openOrders?.find((o) => o.tableId === table.id);
-  const otherOccupiedTables = allTables.filter(
-    (t) => t.id !== table.id && openOrders?.some((o) => o.tableId === t.id),
+  // Other non-merged tables that can be joined into this primary table
+  const candidateTables = allTables.filter(
+    (t) =>
+      t.id !== table.id &&
+      !t.mergedWithTableId &&
+      (t.status === "OCCUPIED" || t.status === "AVAILABLE"),
   );
 
-  const handleMerge = (otherTableId: string) => {
-    const otherOrder = openOrders?.find((o) => o.tableId === otherTableId);
-    if (!thisOrder || !otherOrder) return;
-    merge.mutate(
-      { targetOrderId: thisOrder.id, sourceOrderId: otherOrder.id },
+  const handleMerge = (secondaryTableId: string) => {
+    const secondary = allTables.find((t) => t.id === secondaryTableId);
+
+    mergeTable.mutate(
+      { secondaryTableId, primaryTableId: table.id },
       {
         onSuccess: () => {
-          toast.success(`Merged into ${table.name ?? `Table ${table.number}`}`);
+          toast.success(
+            `Merged ${secondary?.name ?? `Table ${secondary?.number}`} into ${
+              table.name ?? `Table ${table.number}`
+            }!`,
+          );
           onOpenChange(false);
         },
         onError: (err) =>
-          toast.error(err instanceof ApiError ? err.message : "Could not merge orders"),
+          toast.error(
+            err instanceof ApiError ? err.message : "Could not merge tables",
+          ),
       },
     );
   };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-sm">
+      <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>
-            Merge into {table.name ?? `Table ${table.number}`}
+          <DialogTitle className="flex items-center gap-2 text-base font-bold">
+            <Merge className="h-5 w-5 text-primary" />
+            Merge Tables into {table.name ?? `Table ${table.number}`}
           </DialogTitle>
+          <DialogDescription className="text-xs">
+            Push physical tables together for a large dining party. Consolidates seating and active open orders into this primary table.
+          </DialogDescription>
         </DialogHeader>
 
-        {!thisOrder ? (
-          <p className="py-4 text-sm text-muted-foreground">
-            This table has no open order to merge into.
-          </p>
-        ) : otherOccupiedTables.length === 0 ? (
-          <p className="py-4 text-sm text-muted-foreground">
-            No other tables have an open order right now.
+        {candidateTables.length === 0 ? (
+          <p className="py-6 text-center text-xs text-muted-foreground">
+            No other eligible tables available to merge right now.
           </p>
         ) : (
-          <div className="flex flex-col gap-2 py-2">
-            {otherOccupiedTables.map((t) => {
+          <div className="flex flex-col gap-2 py-2 max-h-64 overflow-y-auto">
+            {candidateTables.map((t) => {
               const order = openOrders?.find((o) => o.tableId === t.id);
               return (
                 <Button
                   key={t.id}
                   variant="outline"
-                  className="justify-between"
-                  disabled={merge.isPending}
+                  className="h-12 justify-between px-3.5 border-border/70 hover:border-primary hover:bg-primary/5 transition-all"
+                  disabled={mergeTable.isPending}
                   onClick={() => handleMerge(t.id)}
                 >
-                  <span>{t.name ?? `Table ${t.number}`}</span>
-                  <span className="text-muted-foreground">
-                    {order && formatCurrency(order.totalAmount)}
-                  </span>
+                  <div className="flex items-center gap-2">
+                    <span className="font-bold text-sm text-foreground">
+                      {t.name ?? `Table ${t.number}`}
+                    </span>
+                    <span className="flex items-center gap-1 text-xs text-muted-foreground font-medium">
+                      <Users className="h-3 w-3" />
+                      {t.capacity}p
+                    </span>
+                  </div>
+
+                  {order ? (
+                    <span className="text-xs font-bold text-rose-600 dark:text-rose-400 bg-rose-500/10 px-2 py-0.5 rounded-md">
+                      Active: {formatCurrency(order.totalAmount)}
+                    </span>
+                  ) : (
+                    <span className="text-xs text-emerald-600 dark:text-emerald-400 font-medium">
+                      Empty / Ready
+                    </span>
+                  )}
                 </Button>
               );
             })}

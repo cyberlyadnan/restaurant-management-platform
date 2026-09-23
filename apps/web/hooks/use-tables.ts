@@ -26,6 +26,9 @@ export interface RestaurantTable {
   shape: "square" | "round" | "rect";
   qrToken: string | null;
   assignedWaiter: { id: string; name: string } | null;
+  mergedWithTableId?: string | null;
+  mergedWithTable?: { id: string; number: string; name?: string | null; status: TableStatusDto } | null;
+  mergedTables?: { id: string; number: string; name?: string | null; status: TableStatusDto }[];
 }
 
 export interface Floor {
@@ -117,5 +120,49 @@ export function useRotateQrToken(branchId: string | null) {
   return useMutation({
     mutationFn: (id: string) => api.post<RestaurantTable>(`/tables/${id}/qr-token?branchId=${branchId}`),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["floors", branchId] }),
+  });
+}
+
+export function useMoveTable(branchId: string | null) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ sourceTableId, targetTableId }: { sourceTableId: string; targetTableId: string }) =>
+      api.post<{ sourceTable: RestaurantTable; targetTable: RestaurantTable; orderMoved: boolean }>(
+        `/tables/${sourceTableId}/move?branchId=${branchId}`,
+        { targetTableId },
+      ),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["floors", branchId] });
+      queryClient.invalidateQueries({ queryKey: ["orders", branchId] });
+    },
+  });
+}
+
+export function useMergeTable(branchId: string | null) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ secondaryTableId, primaryTableId }: { secondaryTableId: string; primaryTableId: string }) =>
+      api.post<{ primaryTable: RestaurantTable; secondaryTable: RestaurantTable }>(
+        `/tables/${secondaryTableId}/merge?branchId=${branchId}`,
+        { targetTableId: primaryTableId },
+      ),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["floors", branchId] });
+      queryClient.invalidateQueries({ queryKey: ["orders", branchId] });
+    },
+  });
+}
+
+export function useUnmergeTable(branchId: string | null) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (secondaryTableId: string) =>
+      api.post<{ unmergedTable: RestaurantTable; masterTable?: RestaurantTable }>(
+        `/tables/${secondaryTableId}/unmerge?branchId=${branchId}`,
+      ),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["floors", branchId] });
+      queryClient.invalidateQueries({ queryKey: ["orders", branchId] });
+    },
   });
 }
