@@ -4,18 +4,22 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import React from 'react';
 import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
 import { useAuth } from '../context/AuthContext';
-import { CheckoutScreen } from '../screens/CheckoutScreen';
-import { KdsScreen } from '../screens/KdsScreen';
+import { ManagerRestrictedScreen } from '../screens/common/ManagerRestrictedScreen';
+import { KitchenHomeScreen } from '../screens/kitchen/KitchenHomeScreen';
 import { LoginScreen } from '../screens/LoginScreen';
-import { PosScreen } from '../screens/PosScreen';
-import { SettingsScreen } from '../screens/SettingsScreen';
-import { TablesScreen } from '../screens/TablesScreen';
+import { WaiterCartScreen } from '../screens/waiter/WaiterCartScreen';
+import { WaiterHomeScreen } from '../screens/waiter/WaiterHomeScreen';
+import { WaiterMenuScreen } from '../screens/waiter/WaiterMenuScreen';
+import { WaiterNotificationsScreen } from '../screens/waiter/WaiterNotificationsScreen';
+import { WaiterOrdersScreen } from '../screens/waiter/WaiterOrdersScreen';
+import { WaiterProfileScreen } from '../screens/waiter/WaiterProfileScreen';
+import { WaiterTablesScreen } from '../screens/waiter/WaiterTablesScreen';
 import { theme } from '../theme';
 
 const Tab = createBottomTabNavigator();
 const Stack = createNativeStackNavigator();
 
-function MainTabs() {
+function WaiterTabs() {
   return (
     <Tab.Navigator
       screenOptions={{
@@ -36,8 +40,18 @@ function MainTabs() {
       }}
     >
       <Tab.Screen
+        name="Home"
+        component={WaiterHomeScreen}
+        options={{
+          tabBarLabel: 'Home',
+          tabBarIcon: ({ focused }) => (
+            <Text style={{ fontSize: 18, opacity: focused ? 1 : 0.6 }}>🏠</Text>
+          ),
+        }}
+      />
+      <Tab.Screen
         name="Tables"
-        component={TablesScreen}
+        component={WaiterTablesScreen}
         options={{
           tabBarLabel: 'Tables',
           tabBarIcon: ({ focused }) => (
@@ -46,32 +60,32 @@ function MainTabs() {
         }}
       />
       <Tab.Screen
-        name="POS"
-        component={PosScreen}
+        name="Menu"
+        component={WaiterMenuScreen}
         options={{
-          tabBarLabel: 'POS Order',
+          tabBarLabel: 'Menu',
           tabBarIcon: ({ focused }) => (
-            <Text style={{ fontSize: 18, opacity: focused ? 1 : 0.6 }}>🛒</Text>
+            <Text style={{ fontSize: 18, opacity: focused ? 1 : 0.6 }}>📋</Text>
           ),
         }}
       />
       <Tab.Screen
-        name="KDS"
-        component={KdsScreen}
+        name="Orders"
+        component={WaiterOrdersScreen}
         options={{
-          tabBarLabel: 'Kitchen',
+          tabBarLabel: 'Orders',
           tabBarIcon: ({ focused }) => (
-            <Text style={{ fontSize: 18, opacity: focused ? 1 : 0.6 }}>🍳</Text>
+            <Text style={{ fontSize: 18, opacity: focused ? 1 : 0.6 }}>📦</Text>
           ),
         }}
       />
       <Tab.Screen
-        name="Settings"
-        component={SettingsScreen}
+        name="Profile"
+        component={WaiterProfileScreen}
         options={{
-          tabBarLabel: 'Settings',
+          tabBarLabel: 'Profile',
           tabBarIcon: ({ focused }) => (
-            <Text style={{ fontSize: 18, opacity: focused ? 1 : 0.6 }}>⚙️</Text>
+            <Text style={{ fontSize: 18, opacity: focused ? 1 : 0.6 }}>👤</Text>
           ),
         }}
       />
@@ -80,7 +94,7 @@ function MainTabs() {
 }
 
 export function AppNavigator() {
-  const { user, isLoading } = useAuth();
+  const { user, isLoading, isKitchen } = useAuth();
 
   if (isLoading) {
     return (
@@ -95,14 +109,14 @@ export function AppNavigator() {
       <Stack.Navigator screenOptions={{ headerShown: false }}>
         {!user ? (
           <Stack.Screen name="Login" component={LoginScreen} />
+        ) : isKitchen ? (
+          <Stack.Screen name="KitchenMain" component={KitchenHomeScreen} />
         ) : (
           <>
-            <Stack.Screen name="Main" component={MainTabs} />
-            <Stack.Screen
-              name="Checkout"
-              component={CheckoutScreen}
-              options={{ presentation: 'modal' }}
-            />
+            <Stack.Screen name="WaiterMain" component={WaiterTabs} />
+            <Stack.Screen name="Cart" component={WaiterCartScreen} />
+            <Stack.Screen name="Notifications" component={WaiterNotificationsScreen} />
+            <Stack.Screen name="ManagerNotice" component={ManagerRestrictedScreen} />
           </>
         )}
       </Stack.Navigator>

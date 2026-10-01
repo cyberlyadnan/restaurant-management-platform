@@ -261,9 +261,10 @@ The following features have database models or partial backend endpoints in plac
 │                           │                                   │ • Staff performance & tips report │
 │                           │                                   │ • Multi-branch comparative charts │
 ├───────────────────────────┼───────────────────────────────────┼───────────────────────────────────┤
-│ Waiter Mobile Companion   │ • React Native scaffolding app    │ • Live WebSocket sync with NestJS │
-│                           │ • Basic POS & KDS screens         │ • Table floor plan mobile view    │
-│                           │                                   │ • Mobile order creation & edit    │
+│ Waiter & Kitchen Mobile App │ • Production React Native app     │ • Role-based navigation (Waiter vs│
+│                           │ • Waiter Home, Tables, Menu, Cart │   Kitchen KDS vs Manager notice)  │
+│                           │ • Item Modifier Bottom Sheet      │ • Live Socket.IO status updates   │
+│                           │ • KDS Queue & Ticket Cards        │ • KOT submission & order pipeline │
 ├───────────────────────────┼───────────────────────────────────┼───────────────────────────────────┤
 │ Menu Availability & Prep  │ • `prepTimeMinutes` field         │ • KDS prep timer warning based    │
 │ Time                      │ • `availableFrom` & `availableTo` │   on item prep time               │

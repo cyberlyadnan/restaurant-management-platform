@@ -14,7 +14,11 @@ interface AuthContextValue {
   branchId: string | null;
   branches: Branch[];
   isLoading: boolean;
+  isWaiter: boolean;
+  isKitchen: boolean;
+  isOwnerOrManager: boolean;
   login: (email: string, password: string) => Promise<void>;
+  pinLogin: (pin: string) => Promise<void>;
   logout: () => Promise<void>;
   selectBranch: (id: string) => Promise<void>;
 }
@@ -27,6 +31,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [branches, setBranches] = useState<Branch[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
 
+  const roleName = user?.roleName?.toUpperCase() ?? '';
+  const permissions = user?.permissions ?? [];
+
+  const isOwnerOrManager =
+    roleName === 'OWNER' || roleName === 'ADMINISTRATOR' || roleName === 'RESTAURANT_MANAGER';
+  const isKitchen =
+    roleName === 'KITCHEN_STAFF' ||
+    roleName === 'CHEF' ||
+    (permissions.includes('kds.manage') && !permissions.includes('orders.create'));
+  const isWaiter = !isKitchen; // default operational staff experience
+
   // Restore session on app launch
   useEffect(() => {
     async function initSession() {
@@ -38,7 +53,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           const res = await api.get<{ user: SessionUser }>('/auth/me');
           setUser(res.user);
 
-          // Fetch branches for this restaurant
           const branchList = await api.get<Branch[]>('/branches');
           setBranches(branchList);
 
@@ -59,22 +73,31 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     initSession();
   }, []);
 
-  const login = async (email: string, password: string) => {
-    const res = await api.post<{ token: string; user: SessionUser }>('/auth/login', {
-      email,
-      password,
-    });
+  const handleAfterLogin = async (token: string, userData: SessionUser) => {
+    await api.setToken(token);
+    setUser(userData);
 
-    await api.setToken(res.token);
-    setUser(res.user);
-
-    // Fetch branches
     const branchList = await api.get<Branch[]>('/branches');
     setBranches(branchList);
     if (branchList.length > 0) {
       setBranchId(branchList[0].id);
       await AsyncStorage.setItem(STORAGE_KEYS.BRANCH_ID, branchList[0].id);
     }
+  };
+
+  const login = async (email: string, password: string) => {
+    const res = await api.post<{ token: string; user: SessionUser }>('/auth/login', {
+      email,
+      password,
+    });
+    await handleAfterLogin(res.token, res.user);
+  };
+
+  const pinLogin = async (pin: string) => {
+    const res = await api.post<{ token: string; user: SessionUser }>('/auth/pin-login', {
+      pin,
+    });
+    await handleAfterLogin(res.token, res.user);
   };
 
   const logout = async () => {
@@ -100,7 +123,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         branchId,
         branches,
         isLoading,
+        isWaiter,
+        isKitchen,
+        isOwnerOrManager,
         login,
+        pinLogin,
         logout,
         selectBranch,
       }}
