@@ -68,7 +68,7 @@ export class RealtimeGateway
       if (typeof branchId !== 'string' || !branchId) {
         throw new Error('Missing branchId');
       }
-      await this.branchAccess.assertAccess(user.restaurantId, branchId);
+      await this.branchAccess.assertAccess(user.restaurantId, branchId, user.id);
 
       await client.join(this.branchRoom(branchId));
       // Every socket also joins a room keyed to its own authenticated user

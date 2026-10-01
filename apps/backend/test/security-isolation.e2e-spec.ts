@@ -467,4 +467,115 @@ describe('Security & Multi-Tenant Regression Test Suite (E2E)', () => {
       expect(res.status).toBe(401);
     });
   });
+
+  // =========================================================================
+  // 9. Phase 0A Hardened Security & Isolation Tests
+  // =========================================================================
+  describe('Assertion 9: Phase 0A Hardened Security & Isolation', () => {
+    it('should block non-owner staff from accessing a branch they are NOT assigned to', async () => {
+      // Create a second branch in Restaurant A
+      const branchA2 = await prisma.branch.create({
+        data: {
+          restaurantId: restAId,
+          name: 'Alpha Second Branch',
+          isActive: true,
+        },
+      });
+
+      // Create a non-owner staff user assigned ONLY to branchA2
+      const staffRole = await prisma.role.create({
+        data: {
+          restaurantId: restAId,
+          name: 'CASHIER',
+          label: 'Cashier',
+          isSystem: true,
+        },
+      });
+
+      const staffUser = await prisma.user.create({
+        data: {
+          restaurantId: restAId,
+          roleId: staffRole.id,
+          name: 'Cashier Branch A2',
+          email: `cashier.a2.${Date.now()}@example.com`,
+          passwordHash: 'hash',
+          isActive: true,
+          branches: {
+            create: { branchId: branchA2.id },
+          },
+        },
+      });
+
+      // Staff user should be BLOCKED from accessing branchAId (Branch A1)
+      await expect(
+        branchAccess.assertAccess(restAId, branchAId, staffUser.id),
+      ).rejects.toThrow('Staff member is not assigned to this branch');
+
+      // Staff user should be ALLOWED to access branchA2
+      await expect(
+        branchAccess.assertAccess(restAId, branchA2.id, staffUser.id),
+      ).resolves.toBeUndefined();
+
+      // Owner userAId should be ALLOWED to access both branchAId and branchA2
+      await expect(
+        branchAccess.assertAccess(restAId, branchAId, userAId),
+      ).resolves.toBeUndefined();
+      await expect(
+        branchAccess.assertAccess(restAId, branchA2.id, userAId),
+      ).resolves.toBeUndefined();
+    });
+
+    it('should throw ForbiddenException on BackupService.restore (pg_restore execution purged)', async () => {
+      const backupService = app.get(require('../src/backup/backup.service').BackupService);
+      await expect(
+        backupService.restore(
+          { id: userAId, restaurantId: restAId, role: 'OWNER' } as any,
+          'fake-id',
+          { confirm: 'RESTORE' } as any,
+        ),
+      ).rejects.toThrow('Database restore operations are disabled at the application level');
+    });
+
+    it('should throw ForbiddenException on UpdateService.applyUpdate (host docker execution purged)', async () => {
+      const updateService = app.get(require('../src/system/update.service').UpdateService);
+      await expect(updateService.applyUpdate()).rejects.toThrow(
+        'Host container updates via application APIs are disabled for multi-tenant security.',
+      );
+    });
+
+    it('should issue signed QR table session and reject session token used against different table', async () => {
+      const publicMenuService = app.get(
+        require('../src/modules/public/public-menu.service').PublicMenuService,
+      );
+
+      // Create a test table with QR token
+      const qrToken = `qr-test-${Date.now()}`;
+      const floor = await prisma.floor.create({
+        data: { branchId: branchAId, name: 'QR Floor' },
+      });
+      const table1 = await prisma.table.create({
+        data: { floorId: floor.id, number: 'QR-1', qrToken },
+      });
+
+      const menuRes = await publicMenuService.getMenuByQrToken(qrToken);
+      expect(menuRes.tableSessionToken).toBeDefined();
+
+      // Session token should verify cleanly for table1
+      const verified = publicMenuService.verifyTableSessionToken(
+        menuRes.tableSessionToken,
+        branchAId,
+        table1.id,
+      );
+      expect(verified.tableId).toBe(table1.id);
+
+      // Session token should throw ForbiddenException if presented for a different table
+      expect(() =>
+        publicMenuService.verifyTableSessionToken(
+          menuRes.tableSessionToken,
+          branchAId,
+          'different-table-id',
+        ),
+      ).toThrow('Table session token mismatch or unauthorized for this table');
+    });
+  });
 });

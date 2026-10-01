@@ -1,13 +1,23 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
+import { JwtService } from '@nestjs/jwt';
 import type { CartItemDto } from '@nodedr-restaurant/types';
 import { PrismaService } from '../../prisma/prisma.service';
 import { OrdersService } from '../orders/orders.service';
+
+export interface QrTableSessionPayload {
+  type: 'table_qr_session';
+  restaurantId: string;
+  branchId: string;
+  tableId: string;
+  qrToken: string;
+}
 
 @Injectable()
 export class PublicMenuService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly ordersService: OrdersService,
+    private readonly jwt: JwtService,
   ) {}
 
   private async resolveTable(qrToken: string) {
@@ -45,21 +55,66 @@ export class PublicMenuService {
       },
     });
 
+    const sessionPayload: QrTableSessionPayload = {
+      type: 'table_qr_session',
+      restaurantId: branch.restaurantId,
+      branchId: branch.id,
+      tableId: table.id,
+      qrToken,
+    };
+
+    const tableSessionToken = this.jwt.sign(sessionPayload, {
+      expiresIn: '2h',
+    });
+
     return {
       branchName: branch.name,
       tableName: table.name ?? `Table ${table.number}`,
+      tableId: table.id,
+      branchId: branch.id,
+      restaurantId: branch.restaurantId,
+      tableSessionToken,
       categories,
     };
   }
 
-  async createOrder(qrToken: string, items: CartItemDto[], guestName: string) {
+  verifyTableSessionToken(
+    token: string,
+    expectedBranchId: string,
+    expectedTableId: string,
+  ): QrTableSessionPayload {
+    try {
+      const payload = this.jwt.verify<QrTableSessionPayload>(token);
+
+      if (
+        payload.type !== 'table_qr_session' ||
+        payload.branchId !== expectedBranchId ||
+        payload.tableId !== expectedTableId
+      ) {
+        throw new ForbiddenException(
+          'Table session token mismatch or unauthorized for this table',
+        );
+      }
+      return payload;
+    } catch (err) {
+      if (err instanceof ForbiddenException) throw err;
+      throw new ForbiddenException('Invalid or expired table session token');
+    }
+  }
+
+  async createOrder(
+    qrToken: string,
+    items: CartItemDto[],
+    guestName: string,
+    tableSessionToken?: string,
+  ) {
     const table = await this.resolveTable(qrToken);
     const branchId = table.floor.branchId;
 
-    // A guest who already ordered once this visit and scans again to add
-    // more (e.g. drinks now, food later) should land on the same tab, not
-    // open a second order for the table — mirrors how staff add a round
-    // from the POS for an occupied table.
+    if (tableSessionToken) {
+      this.verifyTableSessionToken(tableSessionToken, branchId, table.id);
+    }
+
     const openOrder = await this.prisma.order.findFirst({
       where: { branchId, tableId: table.id, status: 'OPEN' },
     });
@@ -67,11 +122,6 @@ export class PublicMenuService {
       return this.ordersService.addItems(branchId, openOrder.id, items);
     }
 
-    // A guest scanning a QR code has no staff account, but Order.createdById
-    // is a required FK — attribute the order to whoever is on the floor for
-    // this table (assigned waiter), falling back to any staff member linked
-    // to the branch (every branch has at least its owner) so this never
-    // fails for lack of a "system user" that doesn't otherwise exist.
     const createdById =
       table.assignedWaiterId ??
       (
