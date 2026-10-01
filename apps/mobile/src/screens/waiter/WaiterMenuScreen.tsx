@@ -32,11 +32,8 @@ export function WaiterMenuScreen({ route, navigation }: any) {
   const { theme } = useAppTheme();
   const insets = useSafeAreaInsets();
 
-  const initialTableId = route.params?.tableId || null;
-  const initialTableName = route.params?.tableName || null;
-
-  const [tableId] = useState<string | null>(initialTableId);
-  const [tableName] = useState<string | null>(initialTableName);
+  const tableId = route.params?.tableId || null;
+  const tableName = route.params?.tableName || null;
 
   const [categories, setCategories] = useState<{ id: string; name: string }[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<string>('ALL');

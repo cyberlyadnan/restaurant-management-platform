@@ -59,19 +59,20 @@ export function WaiterCartScreen({ route, navigation }: any) {
     setIsSubmitting(true);
     try {
       const payload = {
+        type: tableId ? 'DINE_IN' : 'TAKEAWAY',
         tableId: tableId || undefined,
-        orderType: tableId ? 'DINE_IN' : 'TAKEAWAY',
         guestCount,
-        notes: orderNotes.trim(),
+        notes: orderNotes.trim() || undefined,
         items: cartItems.map((ci) => ({
           menuItemId: ci.menuItemId,
           quantity: ci.quantity,
-          notes: ci.notes || undefined,
-          modifiers: ci.selectedModifiers.map((m) => m.id),
+          kitchenNote: ci.notes || undefined,
+          modifierIds: ci.selectedModifiers.map((m) => m.id),
         })),
       };
 
       const res = await api.post<any>(`/orders?branchId=${branchId}`, payload);
+      setCartItems([]);
       Alert.alert(
         'KOT Sent Successfully! 🍳',
         `Order #${res.orderNumber || 'placed'} has been submitted to the kitchen display.`,

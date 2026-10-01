@@ -83,7 +83,7 @@ export function KitchenHomeScreen({ navigation }: any) {
   const handleUpdateStatus = async (ticketId: string, newStatus: string) => {
     if (!branchId) return;
     try {
-      await api.put(`/kds/tickets/${ticketId}/status?branchId=${branchId}`, {
+      await api.patch(`/kds/tickets/${ticketId}/status?branchId=${branchId}`, {
         status: newStatus,
       });
       fetchTickets();
@@ -95,7 +95,7 @@ export function KitchenHomeScreen({ navigation }: any) {
   const handleTogglePriority = async (ticketId: string, currentPriority: boolean) => {
     if (!branchId) return;
     try {
-      await api.put(`/kds/tickets/${ticketId}/priority?branchId=${branchId}`, {
+      await api.patch(`/kds/tickets/${ticketId}/priority?branchId=${branchId}`, {
         isPriority: !currentPriority,
       });
       fetchTickets();

@@ -23,12 +23,17 @@ interface OrderItem {
   tableNumber?: string;
   orderType: string;
   status: string;
+  kitchenStatus: string;
   totalAmount: number;
   items: {
     id: string;
     quantity: number;
     menuItem: { name: string };
     notes?: string;
+  }[];
+  kots: {
+    id: string;
+    status: string;
   }[];
   createdAt: string;
 }
@@ -49,16 +54,30 @@ export function WaiterOrdersScreen() {
     if (!branchId) return;
     try {
       const res = await api.get<any[]>(`/orders?branchId=${branchId}`);
-      const mapped: OrderItem[] = (res || []).map((o) => ({
-        id: o.id,
-        orderNumber: o.orderNumber,
-        tableNumber: o.table?.number,
-        orderType: o.orderType,
-        status: o.status,
-        totalAmount: Number(o.totalAmount),
-        items: o.items || [],
-        createdAt: o.createdAt,
-      }));
+      const mapped: OrderItem[] = (res || []).map((o) => {
+        const kots: any[] = o.kots || [];
+        let kStatus = 'NEW';
+        if (kots.some((k) => k.status === 'READY')) {
+          kStatus = 'READY';
+        } else if (kots.some((k) => k.status === 'PREPARING' || k.status === 'ACCEPTED')) {
+          kStatus = 'PREPARING';
+        } else if (kots.length > 0 && kots.every((k) => k.status === 'SERVED')) {
+          kStatus = 'SERVED';
+        }
+
+        return {
+          id: o.id,
+          orderNumber: o.orderNumber,
+          tableNumber: o.table?.number,
+          orderType: o.type || o.orderType,
+          status: o.status,
+          kitchenStatus: kStatus,
+          totalAmount: Number(o.totalAmount),
+          items: o.items || [],
+          kots: kots.map((k) => ({ id: k.id, status: k.status })),
+          createdAt: o.createdAt,
+        };
+      });
       setOrders(mapped);
     } catch (err) {
       console.log('Failed to fetch waiter orders:', err);
@@ -82,13 +101,19 @@ export function WaiterOrdersScreen() {
     }
   }, [branchId]);
 
-  const handleMarkDelivered = async (orderId: string) => {
+  const handleMarkDelivered = async (order: OrderItem) => {
     if (!branchId) return;
     try {
-      await api.put(`/orders/${orderId}/status?branchId=${branchId}`, {
-        status: 'DELIVERED',
-      });
-      Alert.alert('Success', 'Order marked as delivered to guest table!');
+      // Update active ready KOTs for this order to SERVED
+      const readyKots = order.kots.filter((k) => k.status === 'READY' || k.status === 'PREPARING' || k.status === 'NEW' || k.status === 'ACCEPTED');
+      if (readyKots.length > 0) {
+        await Promise.all(
+          readyKots.map((k) =>
+            api.patch(`/kds/tickets/${k.id}/status?branchId=${branchId}`, { status: 'SERVED' }),
+          ),
+        );
+      }
+      Alert.alert('Served! 🍽️', `Order #${order.orderNumber} served to table.`);
       fetchOrders();
     } catch (err: any) {
       Alert.alert('Error', err.message || 'Failed to update order status');
@@ -110,9 +135,9 @@ export function WaiterOrdersScreen() {
   };
 
   const filteredOrders = orders.filter((o) => {
-    if (selectedTab === 'READY') return o.status === 'READY';
-    if (selectedTab === 'COMPLETED') return o.status === 'COMPLETED' || o.status === 'DELIVERED';
-    return o.status !== 'COMPLETED' && o.status !== 'CANCELLED';
+    if (selectedTab === 'READY') return o.kitchenStatus === 'READY';
+    if (selectedTab === 'COMPLETED') return o.kitchenStatus === 'SERVED' || o.status === 'PAID';
+    return o.status !== 'CANCELLED' && o.kitchenStatus !== 'SERVED';
   });
 
   return (
@@ -179,8 +204,8 @@ export function WaiterOrdersScreen() {
             />
           }
           renderItem={({ item }) => {
-            const isReady = item.status === 'READY';
-            const isDelivered = item.status === 'DELIVERED';
+            const isReady = item.kitchenStatus === 'READY';
+            const isServed = item.kitchenStatus === 'SERVED';
             return (
               <View
                 style={[
@@ -216,7 +241,18 @@ export function WaiterOrdersScreen() {
                     )}
                   </View>
 
-                  <StatusBadge status={item.status} size="sm" />
+                  <StatusBadge
+                    status={
+                      item.kitchenStatus === 'READY'
+                        ? 'READY'
+                        : item.kitchenStatus === 'PREPARING'
+                        ? 'PREPARING'
+                        : item.kitchenStatus === 'SERVED'
+                        ? 'SERVED'
+                        : item.status
+                    }
+                    size="sm"
+                  />
                 </View>
 
                 {/* Items preview */}
@@ -245,7 +281,7 @@ export function WaiterOrdersScreen() {
                     {isReady && (
                       <TouchableOpacity
                         style={[styles.deliverBtn, { backgroundColor: theme.colors.success }]}
-                        onPress={() => handleMarkDelivered(item.id)}
+                        onPress={() => handleMarkDelivered(item)}
                         activeOpacity={0.8}
                       >
                         <Check size={14} color="#ffffff" />
@@ -253,7 +289,7 @@ export function WaiterOrdersScreen() {
                       </TouchableOpacity>
                     )}
 
-                    {!isDelivered && (
+                    {!isServed && (
                       <TouchableOpacity
                         style={[
                           styles.billBtn,
