@@ -1,43 +1,84 @@
+import { LogOut, ShieldAlert } from 'lucide-react-native';
 import React from 'react';
 import {
   ScrollView,
   StyleSheet,
   Text,
-  TouchableOpacity,
   View,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { Button } from '../../components/common/Button';
 import { useAuth } from '../../context/AuthContext';
-import { theme } from '../../theme';
+import { useAppTheme } from '../../context/ThemeContext';
 
 export function ManagerRestrictedScreen() {
   const { user, logout } = useAuth();
+  const { theme } = useAppTheme();
+  const insets = useSafeAreaInsets();
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-      <View style={styles.card}>
-        <View style={styles.iconCircle}>
-          <Text style={styles.iconText}>📱</Text>
+    <ScrollView
+      style={[styles.container, { backgroundColor: theme.colors.background }]}
+      contentContainerStyle={[
+        styles.content,
+        { paddingTop: insets.top + 20, paddingBottom: insets.bottom + 20 },
+      ]}
+    >
+      <View
+        style={[
+          styles.card,
+          {
+            backgroundColor: theme.colors.surface,
+            borderColor: theme.colors.surfaceBorder,
+          },
+        ]}
+      >
+        <View
+          style={[
+            styles.iconCircle,
+            { backgroundColor: theme.colors.surfaceSubtle },
+          ]}
+        >
+          <ShieldAlert size={32} color={theme.colors.warning} />
         </View>
 
-        <Text style={styles.title}>Mobile App is Staff-Optimized</Text>
-        <Text style={styles.subtitle}>
+        <Text style={[styles.title, { color: theme.colors.textPrimary }]}>
+          Mobile App is Staff-Optimized
+        </Text>
+        <Text style={[styles.subtitle, { color: theme.colors.primary }]}>
           Welcome, {user?.name || 'Manager'}
         </Text>
 
-        <Text style={styles.body}>
+        <Text style={[styles.body, { color: theme.colors.textMuted }]}>
           The mobile application is purpose-built for fast operational workflows (Waiters & Kitchen KDS staff).
         </Text>
 
-        <View style={styles.box}>
-          <Text style={styles.boxTitle}>🔑 Administrative Dashboard Access</Text>
-          <Text style={styles.boxText}>
+        <View
+          style={[
+            styles.box,
+            {
+              backgroundColor: theme.colors.surfaceSubtle,
+              borderColor: theme.colors.surfaceBorder,
+            },
+          ]}
+        >
+          <Text style={[styles.boxTitle, { color: theme.colors.textPrimary }]}>
+            🔑 Administrative Dashboard Access
+          </Text>
+          <Text style={[styles.boxText, { color: theme.colors.textMuted }]}>
             To access owner analytics, financial statements, menu configuration, inventory management, and platform settings, please open the Web Application in your desktop browser.
           </Text>
         </View>
 
-        <TouchableOpacity style={styles.logoutBtn} onPress={logout} activeOpacity={0.8}>
-          <Text style={styles.logoutBtnText}>Sign Out</Text>
-        </TouchableOpacity>
+        <Button
+          variant="danger"
+          size="md"
+          fullWidth
+          onPress={logout}
+          icon={<LogOut size={16} color="#ffffff" />}
+        >
+          Sign Out
+        </Button>
       </View>
     </ScrollView>
   );
@@ -46,84 +87,57 @@ export function ManagerRestrictedScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: theme.colors.background,
   },
   content: {
-    padding: theme.spacing.xl,
+    paddingHorizontal: 20,
     justifyContent: 'center',
     flexGrow: 1,
   },
   card: {
-    backgroundColor: theme.colors.surface,
-    borderRadius: theme.radius.xl,
-    padding: theme.spacing.xl,
+    borderRadius: 20,
+    padding: 24,
     borderWidth: 1,
-    borderColor: theme.colors.surfaceBorder,
     alignItems: 'center',
   },
   iconCircle: {
     width: 64,
     height: 64,
     borderRadius: 32,
-    backgroundColor: theme.colors.surfaceSubtle,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: theme.spacing.md,
-  },
-  iconText: {
-    fontSize: 32,
+    marginBottom: 16,
   },
   title: {
-    color: theme.colors.text,
     fontSize: 20,
     fontWeight: '800',
     textAlign: 'center',
   },
   subtitle: {
-    color: theme.colors.primary,
     fontSize: 14,
     fontWeight: '700',
     marginTop: 4,
-    marginBottom: theme.spacing.md,
+    marginBottom: 16,
   },
   body: {
-    color: theme.colors.textMuted,
     fontSize: 13,
     textAlign: 'center',
     lineHeight: 20,
-    marginBottom: theme.spacing.lg,
+    marginBottom: 20,
   },
   box: {
-    backgroundColor: theme.colors.surfaceSubtle,
-    borderRadius: theme.radius.lg,
-    padding: theme.spacing.md,
+    borderRadius: 14,
+    padding: 16,
     borderWidth: 1,
-    borderColor: theme.colors.surfaceBorder,
     width: '100%',
-    marginBottom: theme.spacing.xl,
+    marginBottom: 24,
   },
   boxTitle: {
-    color: theme.colors.text,
     fontSize: 13,
     fontWeight: '700',
     marginBottom: 4,
   },
   boxText: {
-    color: theme.colors.textMuted,
     fontSize: 12,
     lineHeight: 18,
-  },
-  logoutBtn: {
-    backgroundColor: theme.colors.danger,
-    borderRadius: theme.radius.lg,
-    paddingVertical: 12,
-    paddingHorizontal: 32,
-    width: '100%',
-    alignItems: 'center',
-  },
-  logoutBtnText: {
-    color: '#ffffff',
-    fontSize: 14,
-    fontWeight: '800',
   },
 });

@@ -17,4 +17,5 @@ export const STORAGE_KEYS = {
   USER: '@orderrestro_user',
   BRANCH_ID: '@orderrestro_branch_id',
   SERVER_URL: '@orderrestro_server_url',
+  THEME_MODE: '@orderrestro_theme_mode',
 };

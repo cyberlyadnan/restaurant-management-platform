@@ -1,9 +1,12 @@
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import { BookOpen, Home, Package, User, UtensilsCrossed } from 'lucide-react-native';
 import React from 'react';
-import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, StyleSheet, View } from 'react-native';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { useAuth } from '../context/AuthContext';
+import { ThemeProvider, useAppTheme } from '../context/ThemeContext';
 import { ManagerRestrictedScreen } from '../screens/common/ManagerRestrictedScreen';
 import { KitchenHomeScreen } from '../screens/kitchen/KitchenHomeScreen';
 import { LoginScreen } from '../screens/LoginScreen';
@@ -14,12 +17,13 @@ import { WaiterNotificationsScreen } from '../screens/waiter/WaiterNotifications
 import { WaiterOrdersScreen } from '../screens/waiter/WaiterOrdersScreen';
 import { WaiterProfileScreen } from '../screens/waiter/WaiterProfileScreen';
 import { WaiterTablesScreen } from '../screens/waiter/WaiterTablesScreen';
-import { theme } from '../theme';
 
 const Tab = createBottomTabNavigator();
 const Stack = createNativeStackNavigator();
 
 function WaiterTabs() {
+  const { theme } = useAppTheme();
+
   return (
     <Tab.Navigator
       screenOptions={{
@@ -32,7 +36,7 @@ function WaiterTabs() {
           paddingTop: 8,
         },
         tabBarActiveTintColor: theme.colors.primary,
-        tabBarInactiveTintColor: theme.colors.textDim,
+        tabBarInactiveTintColor: theme.colors.textMuted,
         tabBarLabelStyle: {
           fontSize: 11,
           fontWeight: '700',
@@ -44,9 +48,7 @@ function WaiterTabs() {
         component={WaiterHomeScreen}
         options={{
           tabBarLabel: 'Home',
-          tabBarIcon: ({ focused }) => (
-            <Text style={{ fontSize: 18, opacity: focused ? 1 : 0.6 }}>🏠</Text>
-          ),
+          tabBarIcon: ({ color, size }) => <Home size={size || 20} color={color} />,
         }}
       />
       <Tab.Screen
@@ -54,9 +56,7 @@ function WaiterTabs() {
         component={WaiterTablesScreen}
         options={{
           tabBarLabel: 'Tables',
-          tabBarIcon: ({ focused }) => (
-            <Text style={{ fontSize: 18, opacity: focused ? 1 : 0.6 }}>🍽️</Text>
-          ),
+          tabBarIcon: ({ color, size }) => <UtensilsCrossed size={size || 20} color={color} />,
         }}
       />
       <Tab.Screen
@@ -64,9 +64,7 @@ function WaiterTabs() {
         component={WaiterMenuScreen}
         options={{
           tabBarLabel: 'Menu',
-          tabBarIcon: ({ focused }) => (
-            <Text style={{ fontSize: 18, opacity: focused ? 1 : 0.6 }}>📋</Text>
-          ),
+          tabBarIcon: ({ color, size }) => <BookOpen size={size || 20} color={color} />,
         }}
       />
       <Tab.Screen
@@ -74,9 +72,7 @@ function WaiterTabs() {
         component={WaiterOrdersScreen}
         options={{
           tabBarLabel: 'Orders',
-          tabBarIcon: ({ focused }) => (
-            <Text style={{ fontSize: 18, opacity: focused ? 1 : 0.6 }}>📦</Text>
-          ),
+          tabBarIcon: ({ color, size }) => <Package size={size || 20} color={color} />,
         }}
       />
       <Tab.Screen
@@ -84,21 +80,20 @@ function WaiterTabs() {
         component={WaiterProfileScreen}
         options={{
           tabBarLabel: 'Profile',
-          tabBarIcon: ({ focused }) => (
-            <Text style={{ fontSize: 18, opacity: focused ? 1 : 0.6 }}>👤</Text>
-          ),
+          tabBarIcon: ({ color, size }) => <User size={size || 20} color={color} />,
         }}
       />
     </Tab.Navigator>
   );
 }
 
-export function AppNavigator() {
+function NavigationRoot() {
   const { user, isLoading, isKitchen } = useAuth();
+  const { theme } = useAppTheme();
 
   if (isLoading) {
     return (
-      <View style={styles.loadingContainer}>
+      <View style={[styles.loadingContainer, { backgroundColor: theme.colors.background }]}>
         <ActivityIndicator size="large" color={theme.colors.primary} />
       </View>
     );
@@ -124,10 +119,19 @@ export function AppNavigator() {
   );
 }
 
+export function AppNavigator() {
+  return (
+    <SafeAreaProvider>
+      <ThemeProvider>
+        <NavigationRoot />
+      </ThemeProvider>
+    </SafeAreaProvider>
+  );
+}
+
 const styles = StyleSheet.create({
   loadingContainer: {
     flex: 1,
-    backgroundColor: theme.colors.background,
     alignItems: 'center',
     justifyContent: 'center',
   },

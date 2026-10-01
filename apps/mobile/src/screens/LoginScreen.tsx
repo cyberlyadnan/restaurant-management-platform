@@ -1,19 +1,20 @@
+import { ArrowRight, Lock, Mail, ShieldCheck, UtensilsCrossed } from 'lucide-react-native';
 import React, { useState } from 'react';
 import {
-  ActivityIndicator,
   Alert,
   KeyboardAvoidingView,
   Platform,
-  SafeAreaView,
   ScrollView,
   StyleSheet,
   Text,
-  TextInput,
   TouchableOpacity,
   View,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { Button } from '../components/common/Button';
+import { Input } from '../components/common/Input';
 import { useAuth } from '../context/AuthContext';
-import { theme } from '../theme';
+import { useAppTheme } from '../context/ThemeContext';
 
 const DEMO_ACCOUNTS = [
   { role: 'Owner', email: 'owner@demo.local', pass: 'Password123!' },
@@ -25,6 +26,9 @@ const DEMO_ACCOUNTS = [
 
 export function LoginScreen() {
   const { login } = useAuth();
+  const { theme } = useAppTheme();
+  const insets = useSafeAreaInsets();
+
   const [email, setEmail] = useState('owner@demo.local');
   const [password, setPassword] = useState('Password123!');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -40,196 +44,179 @@ export function LoginScreen() {
       await login(email.trim(), password.trim());
     } catch (err: any) {
       const msg =
-        err.response?.data?.message || err.message || 'Login failed. Check server address.';
+        err.response?.data?.message || err.message || 'Login failed. Check server connection.';
       Alert.alert('Sign In Failed', msg);
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  const handleQuickFill = (acc: typeof DEMO_ACCOUNTS[0]) => {
+  const handleQuickFill = (acc: (typeof DEMO_ACCOUNTS)[0]) => {
     setEmail(acc.email);
     setPassword(acc.pass);
   };
 
   return (
-    <SafeAreaView style={styles.container}>
+    <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
       <KeyboardAvoidingView
         style={styles.keyboardView}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       >
-        <ScrollView contentContainerStyle={styles.scrollContent}>
+        <ScrollView
+          contentContainerStyle={[
+            styles.scrollContent,
+            { paddingTop: insets.top + 20, paddingBottom: insets.bottom + 20 },
+          ]}
+          keyboardShouldPersistTaps="handled"
+        >
           {/* Logo & Header */}
           <View style={styles.header}>
-            <View style={styles.logoBadge}>
-              <Text style={styles.logoIcon}>🍽️</Text>
+            <View style={[styles.logoBadge, { backgroundColor: theme.colors.surface, borderColor: theme.colors.primary }]}>
+              <UtensilsCrossed size={32} color={theme.colors.primary} />
             </View>
-            <Text style={styles.brandTitle}>Nodedr OrderRestro</Text>
-            <Text style={styles.brandSubtitle}>Enterprise Restaurant POS & KDS</Text>
+            <Text style={[styles.brandTitle, { color: theme.colors.textPrimary }]}>
+              Nodedr OrderRestro
+            </Text>
+            <Text style={[styles.brandSubtitle, { color: theme.colors.textMuted }]}>
+              Enterprise Restaurant POS & KDS Mobile
+            </Text>
           </View>
 
-          {/* Form */}
-          <View style={styles.formCard}>
-            <Text style={styles.formTitle}>Staff Sign In</Text>
+          {/* Form Card */}
+          <View style={[styles.formCard, { backgroundColor: theme.colors.surface, borderColor: theme.colors.surfaceBorder }]}>
+            <Text style={[styles.formTitle, { color: theme.colors.textPrimary }]}>
+              Staff Terminal Sign In
+            </Text>
 
-            <View style={styles.inputGroup}>
-              <Text style={styles.label}>Email Address</Text>
-              <TextInput
-                style={styles.input}
-                placeholder="staff@restaurant.com"
-                placeholderTextColor={theme.colors.textDim}
-                keyboardType="email-address"
-                autoCapitalize="none"
-                value={email}
-                onChangeText={setEmail}
-              />
-            </View>
+            <Input
+              label="Email Address"
+              placeholder="staff@restaurant.com"
+              keyboardType="email-address"
+              autoCapitalize="none"
+              value={email}
+              onChangeText={setEmail}
+              leftIcon={<Mail size={16} color={theme.colors.textMuted} />}
+            />
 
-            <View style={styles.inputGroup}>
-              <Text style={styles.label}>Password</Text>
-              <TextInput
-                style={styles.input}
-                placeholder="••••••••"
-                placeholderTextColor={theme.colors.textDim}
-                secureTextEntry
-                value={password}
-                onChangeText={setPassword}
-              />
-            </View>
+            <Input
+              label="Password"
+              placeholder="••••••••"
+              secureTextEntry
+              value={password}
+              onChangeText={setPassword}
+              leftIcon={<Lock size={16} color={theme.colors.textMuted} />}
+            />
 
-            <TouchableOpacity
-              style={[styles.loginBtn, isSubmitting && styles.btnDisabled]}
+            <Button
+              variant="primary"
+              size="lg"
+              loading={isSubmitting}
               onPress={handleLogin}
-              disabled={isSubmitting}
-              activeOpacity={0.8}
+              fullWidth
+              style={styles.loginBtn}
+              icon={<ArrowRight size={18} color="#ffffff" />}
             >
-              {isSubmitting ? (
-                <ActivityIndicator color="#ffffff" />
-              ) : (
-                <Text style={styles.loginBtnText}>Sign In to Terminal</Text>
-              )}
-            </TouchableOpacity>
+              Sign In to Terminal
+            </Button>
           </View>
 
           {/* Demo Quick-Fill Chips */}
           <View style={styles.demoSection}>
-            <Text style={styles.demoTitle}>Quick-fill demo roles:</Text>
+            <Text style={[styles.demoTitle, { color: theme.colors.textMuted }]}>
+              Quick-fill demo roles:
+            </Text>
             <View style={styles.demoGrid}>
               {DEMO_ACCOUNTS.map((acc) => (
                 <TouchableOpacity
                   key={acc.role}
-                  style={styles.demoChip}
+                  style={[
+                    styles.demoChip,
+                    {
+                      backgroundColor: theme.colors.surface,
+                      borderColor: theme.colors.surfaceBorder,
+                    },
+                  ]}
                   onPress={() => handleQuickFill(acc)}
+                  activeOpacity={0.7}
                 >
-                  <Text style={styles.demoChipText}>{acc.role}</Text>
+                  <Text style={[styles.demoChipText, { color: theme.colors.primary }]}>
+                    {acc.role}
+                  </Text>
                 </TouchableOpacity>
               ))}
             </View>
           </View>
+
+          {/* Security Badge */}
+          <View style={styles.securityFooter}>
+            <ShieldCheck size={14} color={theme.colors.primary} />
+            <Text style={[styles.securityText, { color: theme.colors.textMuted }]}>
+              Isolated Multi-Tenant Security System
+            </Text>
+          </View>
         </ScrollView>
       </KeyboardAvoidingView>
-    </SafeAreaView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: theme.colors.background,
   },
   keyboardView: {
     flex: 1,
   },
   scrollContent: {
-    padding: theme.spacing.xl,
+    paddingHorizontal: 20,
     justifyContent: 'center',
     flexGrow: 1,
   },
   header: {
     alignItems: 'center',
-    marginBottom: theme.spacing.xl,
+    marginBottom: 24,
   },
   logoBadge: {
     width: 64,
     height: 64,
     borderRadius: 20,
-    backgroundColor: theme.colors.surface,
     borderWidth: 1.5,
-    borderColor: theme.colors.primary,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: theme.spacing.sm,
-  },
-  logoIcon: {
-    fontSize: 32,
+    marginBottom: 12,
   },
   brandTitle: {
-    color: theme.colors.text,
-    fontSize: 22,
+    fontSize: 24,
     fontWeight: '800',
     letterSpacing: -0.5,
   },
   brandSubtitle: {
-    color: theme.colors.textMuted,
     fontSize: 12,
     marginTop: 4,
+    fontWeight: '600',
   },
   formCard: {
-    backgroundColor: theme.colors.surface,
-    borderRadius: theme.radius.xl,
-    padding: theme.spacing.xl,
+    borderRadius: 20,
+    padding: 24,
     borderWidth: 1,
-    borderColor: theme.colors.surfaceBorder,
-    marginBottom: theme.spacing.lg,
+    marginBottom: 20,
   },
   formTitle: {
-    color: theme.colors.text,
     fontSize: 16,
     fontWeight: '700',
-    marginBottom: theme.spacing.lg,
-  },
-  inputGroup: {
-    marginBottom: theme.spacing.md,
-  },
-  label: {
-    color: theme.colors.textMuted,
-    fontSize: 12,
-    fontWeight: '600',
-    marginBottom: 6,
-  },
-  input: {
-    backgroundColor: theme.colors.surfaceSubtle,
-    borderRadius: theme.radius.md,
-    borderWidth: 1,
-    borderColor: theme.colors.surfaceBorder,
-    color: theme.colors.text,
-    fontSize: 14,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
+    marginBottom: 16,
   },
   loginBtn: {
-    backgroundColor: theme.colors.primary,
-    borderRadius: theme.radius.lg,
-    paddingVertical: 14,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginTop: theme.spacing.sm,
-  },
-  btnDisabled: {
-    opacity: 0.6,
-  },
-  loginBtnText: {
-    color: '#ffffff',
-    fontSize: 14,
-    fontWeight: '800',
+    marginTop: 8,
   },
   demoSection: {
     alignItems: 'center',
+    marginBottom: 20,
   },
   demoTitle: {
-    color: theme.colors.textDim,
     fontSize: 12,
-    marginBottom: theme.spacing.sm,
+    fontWeight: '600',
+    marginBottom: 8,
   },
   demoGrid: {
     flexDirection: 'row',
@@ -238,16 +225,23 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   demoChip: {
-    backgroundColor: theme.colors.surface,
     borderWidth: 1,
-    borderColor: theme.colors.surfaceBorder,
-    borderRadius: theme.radius.md,
+    borderRadius: 10,
     paddingHorizontal: 12,
     paddingVertical: 6,
   },
   demoChipText: {
-    color: theme.colors.textMuted,
     fontSize: 11,
-    fontWeight: '700',
+    fontWeight: '800',
+  },
+  securityFooter: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+  },
+  securityText: {
+    fontSize: 11,
+    fontWeight: '600',
   },
 });

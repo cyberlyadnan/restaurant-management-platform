@@ -1,6 +1,6 @@
+import { ChefHat, LogOut, UtensilsCrossed, Wifi, WifiOff } from 'lucide-react-native';
 import React, { useEffect, useState } from 'react';
 import {
-  ActivityIndicator,
   FlatList,
   RefreshControl,
   StyleSheet,
@@ -8,16 +8,21 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { api } from '../../api/client';
+import { SkeletonLoader } from '../../components/common/SkeletonLoader';
 import { KitchenTicketCard, KotTicketItem } from '../../components/KitchenTicketCard';
 import { useAuth } from '../../context/AuthContext';
+import { useAppTheme } from '../../context/ThemeContext';
 import { socketService } from '../../services/socket';
-import { theme } from '../../theme';
 
 const KITCHEN_TABS = ['ALL', 'NEW', 'PREPARING', 'READY'] as const;
 
 export function KitchenHomeScreen({ navigation }: any) {
   const { branchId, logout, user } = useAuth();
+  const { theme } = useAppTheme();
+  const insets = useSafeAreaInsets();
+
   const [tickets, setTickets] = useState<KotTicketItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -112,29 +117,47 @@ export function KitchenHomeScreen({ navigation }: any) {
     return theme.colors.danger;
   };
 
-  if (loading && !refreshing) {
-    return (
-      <View style={styles.center}>
-        <ActivityIndicator size="large" color={theme.colors.primary} />
-      </View>
-    );
-  }
-
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
       {/* KDS Header Bar */}
-      <View style={styles.header}>
+      <View
+        style={[
+          styles.header,
+          {
+            backgroundColor: theme.colors.surface,
+            borderColor: theme.colors.surfaceBorder,
+            paddingTop: insets.top + 8,
+          },
+        ]}
+      >
         <View>
           <View style={styles.titleRow}>
-            <Text style={styles.headerTitle}>Kitchen KDS Queue</Text>
+            <ChefHat size={22} color={theme.colors.primary} />
+            <Text style={[styles.headerTitle, { color: theme.colors.textPrimary }]}>
+              Kitchen KDS Queue
+            </Text>
             <View style={[styles.statusDot, { backgroundColor: getStatusDotColor() }]} />
-            <Text style={styles.statusLabel}>{networkState}</Text>
           </View>
-          <Text style={styles.chefName}>Chef Terminal • {user?.name || 'Kitchen Staff'}</Text>
+          <Text style={[styles.chefName, { color: theme.colors.textMuted }]}>
+            Chef Terminal • {user?.name || 'Kitchen Staff'}
+          </Text>
         </View>
 
-        <TouchableOpacity style={styles.logoutChip} onPress={logout}>
-          <Text style={styles.logoutChipText}>Sign Out ➔</Text>
+        <TouchableOpacity
+          style={[
+            styles.logoutChip,
+            {
+              backgroundColor: theme.colors.surfaceSubtle,
+              borderColor: theme.colors.surfaceBorder,
+            },
+          ]}
+          onPress={logout}
+          activeOpacity={0.7}
+        >
+          <LogOut size={14} color={theme.colors.danger} />
+          <Text style={[styles.logoutChipText, { color: theme.colors.danger }]}>
+            Sign Out
+          </Text>
         </TouchableOpacity>
       </View>
 
@@ -154,11 +177,22 @@ export function KitchenHomeScreen({ navigation }: any) {
           return (
             <TouchableOpacity
               key={tab}
-              style={[styles.tabChip, isActive && styles.tabChipActive]}
+              style={[
+                styles.tabChip,
+                {
+                  backgroundColor: isActive ? theme.colors.primary : theme.colors.surface,
+                  borderColor: isActive ? theme.colors.primary : theme.colors.surfaceBorder,
+                },
+              ]}
               onPress={() => setSelectedTab(tab)}
               activeOpacity={0.7}
             >
-              <Text style={[styles.tabText, isActive && styles.tabTextActive]}>
+              <Text
+                style={[
+                  styles.tabText,
+                  { color: isActive ? '#ffffff' : theme.colors.textMuted },
+                ]}
+              >
                 {tab} ({count})
               </Text>
             </TouchableOpacity>
@@ -167,35 +201,49 @@ export function KitchenHomeScreen({ navigation }: any) {
       </View>
 
       {/* Ticket List */}
-      <FlatList
-        data={filteredTickets}
-        keyExtractor={(item) => item.id}
-        contentContainerStyle={styles.listContent}
-        refreshControl={
-          <RefreshControl
-            refreshing={refreshing}
-            onRefresh={() => {
-              setRefreshing(true);
-              fetchTickets();
-            }}
-            tintColor={theme.colors.primary}
-          />
-        }
-        renderItem={({ item }) => (
-          <KitchenTicketCard
-            ticket={item}
-            onUpdateStatus={handleUpdateStatus}
-            onTogglePriority={handleTogglePriority}
-          />
-        )}
-        ListEmptyComponent={
-          <View style={styles.emptyContainer}>
-            <Text style={styles.emptyIcon}>🍳</Text>
-            <Text style={styles.emptyTitle}>No tickets in {selectedTab} queue</Text>
-            <Text style={styles.emptySub}>New incoming orders from waiters will sound and display here in real-time.</Text>
-          </View>
-        }
-      />
+      {loading && !refreshing ? (
+        <View style={{ paddingHorizontal: 16, gap: 12 }}>
+          <SkeletonLoader height={140} borderRadius={14} />
+          <SkeletonLoader height={140} borderRadius={14} />
+        </View>
+      ) : (
+        <FlatList
+          data={filteredTickets}
+          keyExtractor={(item) => item.id}
+          contentContainerStyle={[
+            styles.listContent,
+            { paddingBottom: insets.bottom + 30 },
+          ]}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={() => {
+                setRefreshing(true);
+                fetchTickets();
+              }}
+              tintColor={theme.colors.primary}
+            />
+          }
+          renderItem={({ item }) => (
+            <KitchenTicketCard
+              ticket={item}
+              onUpdateStatus={handleUpdateStatus}
+              onTogglePriority={handleTogglePriority}
+            />
+          )}
+          ListEmptyComponent={
+            <View style={styles.emptyContainer}>
+              <UtensilsCrossed size={48} color={theme.colors.textMuted} style={{ marginBottom: 8 }} />
+              <Text style={[styles.emptyTitle, { color: theme.colors.textPrimary }]}>
+                No tickets in {selectedTab} queue
+              </Text>
+              <Text style={[styles.emptySub, { color: theme.colors.textMuted }]}>
+                New incoming orders from waiters will sound and display here in real-time.
+              </Text>
+            </View>
+          }
+        />
+      )}
     </View>
   );
 }
@@ -203,24 +251,14 @@ export function KitchenHomeScreen({ navigation }: any) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: theme.colors.background,
-  },
-  center: {
-    flex: 1,
-    backgroundColor: theme.colors.background,
-    justifyContent: 'center',
-    alignItems: 'center',
   },
   header: {
-    backgroundColor: theme.colors.surface,
-    paddingHorizontal: theme.spacing.lg,
-    paddingTop: theme.spacing.lg,
-    paddingBottom: theme.spacing.md,
+    paddingHorizontal: 16,
+    paddingBottom: 12,
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     borderBottomWidth: 1,
-    borderBottomColor: theme.colors.surfaceBorder,
   },
   titleRow: {
     flexDirection: 'row',
@@ -228,7 +266,6 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   headerTitle: {
-    color: theme.colors.text,
     fontSize: 20,
     fontWeight: '800',
   },
@@ -237,75 +274,52 @@ const styles = StyleSheet.create({
     height: 8,
     borderRadius: 4,
   },
-  statusLabel: {
-    color: theme.colors.textMuted,
-    fontSize: 10,
-    fontWeight: '800',
-  },
   chefName: {
-    color: theme.colors.textMuted,
     fontSize: 12,
     marginTop: 2,
   },
   logoutChip: {
-    backgroundColor: theme.colors.surfaceSubtle,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
     paddingHorizontal: 12,
     paddingVertical: 6,
-    borderRadius: theme.radius.md,
+    borderRadius: 8,
     borderWidth: 1,
-    borderColor: theme.colors.surfaceBorder,
   },
   logoutChipText: {
-    color: theme.colors.danger,
     fontSize: 12,
     fontWeight: '700',
   },
   tabBar: {
     flexDirection: 'row',
-    paddingHorizontal: theme.spacing.lg,
+    paddingHorizontal: 16,
     gap: 6,
-    marginVertical: theme.spacing.md,
+    marginVertical: 12,
   },
   tabChip: {
     flex: 1,
     paddingVertical: 8,
-    borderRadius: theme.radius.md,
-    backgroundColor: theme.colors.surface,
+    borderRadius: 10,
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: theme.colors.surfaceBorder,
-  },
-  tabChipActive: {
-    backgroundColor: theme.colors.primary,
-    borderColor: theme.colors.primary,
   },
   tabText: {
-    color: theme.colors.textMuted,
     fontSize: 11,
     fontWeight: '700',
   },
-  tabTextActive: {
-    color: '#ffffff',
-  },
   listContent: {
-    paddingHorizontal: theme.spacing.lg,
-    paddingBottom: 30,
+    paddingHorizontal: 16,
   },
   emptyContainer: {
-    padding: theme.spacing.xxl,
+    padding: 32,
     alignItems: 'center',
   },
-  emptyIcon: {
-    fontSize: 48,
-    marginBottom: 8,
-  },
   emptyTitle: {
-    color: theme.colors.text,
     fontSize: 16,
     fontWeight: '800',
   },
   emptySub: {
-    color: theme.colors.textDim,
     fontSize: 12,
     textAlign: 'center',
     marginTop: 4,

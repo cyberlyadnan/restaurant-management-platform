@@ -1,6 +1,8 @@
+import { AlertTriangle, Check, Clock, Flame } from 'lucide-react-native';
 import React, { useEffect, useState } from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import { theme } from '../theme';
+import { useAppTheme } from '../context/ThemeContext';
+import { Button } from './common/Button';
 
 export interface KotTicketItem {
   id: string;
@@ -31,6 +33,7 @@ export function KitchenTicketCard({
   onUpdateStatus,
   onTogglePriority,
 }: KitchenTicketCardProps) {
+  const { theme, isDark } = useAppTheme();
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
 
   useEffect(() => {
@@ -57,38 +60,53 @@ export function KitchenTicketCard({
     switch (ticket.status) {
       case 'NEW':
         return (
-          <TouchableOpacity
-            style={[styles.actionBtn, { backgroundColor: theme.colors.primary }]}
+          <Button
+            variant="primary"
+            size="md"
+            fullWidth
             onPress={() => onUpdateStatus(ticket.id, 'ACCEPTED')}
-            activeOpacity={0.8}
           >
-            <Text style={styles.actionBtnText}>[ ACCEPT KOT ]</Text>
-          </TouchableOpacity>
+            ACCEPT KOT
+          </Button>
         );
       case 'ACCEPTED':
         return (
-          <TouchableOpacity
-            style={[styles.actionBtn, { backgroundColor: theme.colors.warning }]}
+          <Button
+            variant="secondary"
+            size="md"
+            fullWidth
             onPress={() => onUpdateStatus(ticket.id, 'PREPARING')}
-            activeOpacity={0.8}
           >
-            <Text style={styles.actionBtnText}>[ PREPARING ]</Text>
-          </TouchableOpacity>
+            START PREPARING
+          </Button>
         );
       case 'PREPARING':
         return (
-          <TouchableOpacity
-            style={[styles.actionBtn, { backgroundColor: theme.colors.success }]}
+          <Button
+            variant="primary"
+            size="md"
+            fullWidth
+            style={{ backgroundColor: theme.colors.success }}
             onPress={() => onUpdateStatus(ticket.id, 'READY')}
-            activeOpacity={0.8}
           >
-            <Text style={styles.actionBtnText}>[ MARK READY ]</Text>
-          </TouchableOpacity>
+            MARK READY
+          </Button>
         );
       case 'READY':
         return (
-          <View style={styles.completedBadge}>
-            <Text style={styles.completedBadgeText}>✓ FOOD READY FOR WAITER</Text>
+          <View
+            style={[
+              styles.completedBadge,
+              {
+                backgroundColor: theme.colors.successLight,
+                borderColor: theme.colors.success,
+              },
+            ]}
+          >
+            <Check size={16} color={theme.colors.success} />
+            <Text style={[styles.completedBadgeText, { color: theme.colors.success }]}>
+              FOOD READY FOR WAITER
+            </Text>
           </View>
         );
       default:
@@ -100,21 +118,33 @@ export function KitchenTicketCard({
     <View
       style={[
         styles.card,
-        ticket.isPriority && styles.cardPriority,
-        isDelayed && styles.cardDelayed,
+        {
+          backgroundColor: theme.colors.surface,
+          borderColor: ticket.isPriority
+            ? theme.colors.secondary
+            : isDelayed
+            ? theme.colors.danger
+            : theme.colors.surfaceBorder,
+        },
       ]}
     >
       {/* Ticket Header */}
-      <View style={styles.header}>
+      <View style={[styles.header, { borderColor: theme.colors.surfaceBorder }]}>
         <View style={styles.headerTitleRow}>
-          <Text style={styles.orderNumber}>#{ticket.orderNumber}</Text>
+          <Text style={[styles.orderNumber, { color: theme.colors.textPrimary }]}>
+            #{ticket.orderNumber}
+          </Text>
           {ticket.tableName ? (
-            <View style={styles.tableBadge}>
-              <Text style={styles.tableBadgeText}>Table {ticket.tableName}</Text>
+            <View style={[styles.tableBadge, { backgroundColor: theme.colors.primaryLight }]}>
+              <Text style={[styles.tableBadgeText, { color: theme.colors.primaryDark }]}>
+                Table {ticket.tableName}
+              </Text>
             </View>
           ) : (
-            <View style={styles.takeawayBadge}>
-              <Text style={styles.takeawayText}>Takeaway</Text>
+            <View style={[styles.takeawayBadge, { backgroundColor: theme.colors.surfaceSubtle }]}>
+              <Text style={[styles.takeawayText, { color: theme.colors.textMuted }]}>
+                Takeaway
+              </Text>
             </View>
           )}
         </View>
@@ -122,18 +152,48 @@ export function KitchenTicketCard({
         <View style={styles.headerRightRow}>
           {/* Priority Toggle Chip */}
           <TouchableOpacity
-            style={[styles.priorityChip, ticket.isPriority && styles.priorityChipActive]}
+            style={[
+              styles.priorityChip,
+              {
+                backgroundColor: ticket.isPriority
+                  ? theme.colors.secondary
+                  : theme.colors.surfaceSubtle,
+                borderColor: ticket.isPriority
+                  ? theme.colors.secondary
+                  : theme.colors.surfaceBorder,
+              },
+            ]}
             onPress={() => onTogglePriority(ticket.id, !!ticket.isPriority)}
+            activeOpacity={0.7}
           >
-            <Text style={[styles.priorityChipText, ticket.isPriority && styles.priorityChipTextActive]}>
-              {ticket.isPriority ? '🔥 RUSH' : 'NORMAL'}
+            {ticket.isPriority ? <Flame size={12} color="#ffffff" /> : null}
+            <Text
+              style={[
+                styles.priorityChipText,
+                { color: ticket.isPriority ? '#ffffff' : theme.colors.textMuted },
+              ]}
+            >
+              {ticket.isPriority ? 'RUSH' : 'NORMAL'}
             </Text>
           </TouchableOpacity>
 
           {/* Timer Badge */}
-          <View style={[styles.timerBadge, isDelayed && styles.timerBadgeDelayed]}>
-            <Text style={[styles.timerText, isDelayed && styles.timerTextDelayed]}>
-              ⏱️ {formatTimer(elapsedSeconds)}
+          <View
+            style={[
+              styles.timerBadge,
+              {
+                backgroundColor: isDelayed ? theme.colors.danger : theme.colors.surfaceSubtle,
+              },
+            ]}
+          >
+            <Clock size={12} color={isDelayed ? '#ffffff' : theme.colors.textMuted} />
+            <Text
+              style={[
+                styles.timerText,
+                { color: isDelayed ? '#ffffff' : theme.colors.textMuted },
+              ]}
+            >
+              {formatTimer(elapsedSeconds)}
             </Text>
           </View>
         </View>
@@ -141,8 +201,19 @@ export function KitchenTicketCard({
 
       {/* General KOT Note */}
       {ticket.notes ? (
-        <View style={styles.kotNoteBox}>
-          <Text style={styles.kotNoteText}>⚠️ NOTE: &quot;{ticket.notes}&quot;</Text>
+        <View
+          style={[
+            styles.kotNoteBox,
+            {
+              backgroundColor: isDark ? '#451a03' : '#ffedd5',
+              borderColor: isDark ? '#7c2d12' : '#fed7aa',
+            },
+          ]}
+        >
+          <AlertTriangle size={14} color={theme.colors.secondary} />
+          <Text style={[styles.kotNoteText, { color: isDark ? '#ffedd5' : '#7c2d12' }]}>
+            NOTE: &quot;{ticket.notes}&quot;
+          </Text>
         </View>
       ) : null}
 
@@ -150,16 +221,24 @@ export function KitchenTicketCard({
       <View style={styles.itemList}>
         {ticket.items.map((item) => (
           <View key={item.id} style={styles.itemRow}>
-            <View style={styles.qtyBadge}>
+            <View style={[styles.qtyBadge, { backgroundColor: theme.colors.primary }]}>
               <Text style={styles.qtyText}>{item.quantity}×</Text>
             </View>
 
             <View style={{ flex: 1 }}>
-              <Text style={styles.itemName}>{item.name}</Text>
+              <Text style={[styles.itemName, { color: theme.colors.textPrimary }]}>
+                {item.name}
+              </Text>
               {item.modifiers && item.modifiers.length > 0 ? (
-                <Text style={styles.modifierText}>+ {item.modifiers.join(', ')}</Text>
+                <Text style={[styles.modifierText, { color: theme.colors.primary }]}>
+                  + {item.modifiers.join(', ')}
+                </Text>
               ) : null}
-              {item.notes ? <Text style={styles.itemNoteText}>Note: &quot;{item.notes}&quot;</Text> : null}
+              {item.notes ? (
+                <Text style={[styles.itemNoteText, { color: theme.colors.warning }]}>
+                  Note: &quot;{item.notes}&quot;
+                </Text>
+              ) : null}
             </View>
           </View>
         ))}
@@ -173,26 +252,17 @@ export function KitchenTicketCard({
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: theme.colors.surface,
-    borderRadius: theme.radius.lg,
-    padding: theme.spacing.md,
-    marginBottom: theme.spacing.md,
+    borderRadius: 14,
+    padding: 14,
+    marginBottom: 12,
     borderWidth: 1.5,
-    borderColor: theme.colors.surfaceBorder,
-  },
-  cardPriority: {
-    borderColor: theme.colors.secondary,
-  },
-  cardDelayed: {
-    borderColor: theme.colors.danger,
   },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingBottom: theme.spacing.sm,
+    paddingBottom: 10,
     borderBottomWidth: 1,
-    borderBottomColor: theme.colors.surfaceBorder,
   },
   headerTitleRow: {
     flexDirection: 'row',
@@ -200,29 +270,24 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   orderNumber: {
-    color: theme.colors.text,
     fontSize: 18,
     fontWeight: '800',
   },
   tableBadge: {
-    backgroundColor: theme.colors.primaryLight,
     paddingHorizontal: 8,
     paddingVertical: 3,
-    borderRadius: theme.radius.sm,
+    borderRadius: 6,
   },
   tableBadgeText: {
-    color: theme.colors.primaryDark,
     fontSize: 12,
     fontWeight: '800',
   },
   takeawayBadge: {
-    backgroundColor: theme.colors.surfaceSubtle,
     paddingHorizontal: 8,
     paddingVertical: 3,
-    borderRadius: theme.radius.sm,
+    borderRadius: 6,
   },
   takeawayText: {
-    color: theme.colors.textMuted,
     fontSize: 11,
     fontWeight: '700',
   },
@@ -232,57 +297,46 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   priorityChip: {
-    backgroundColor: theme.colors.surfaceSubtle,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
     paddingHorizontal: 8,
     paddingVertical: 4,
-    borderRadius: theme.radius.sm,
+    borderRadius: 6,
     borderWidth: 1,
-    borderColor: theme.colors.surfaceBorder,
-  },
-  priorityChipActive: {
-    backgroundColor: theme.colors.secondary,
-    borderColor: theme.colors.secondary,
   },
   priorityChipText: {
-    color: theme.colors.textDim,
     fontSize: 10,
     fontWeight: '800',
   },
-  priorityChipTextActive: {
-    color: '#ffffff',
-  },
   timerBadge: {
-    backgroundColor: theme.colors.surfaceSubtle,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
     paddingHorizontal: 8,
     paddingVertical: 4,
-    borderRadius: theme.radius.sm,
-  },
-  timerBadgeDelayed: {
-    backgroundColor: theme.colors.danger,
+    borderRadius: 6,
   },
   timerText: {
-    color: theme.colors.textMuted,
     fontSize: 11,
     fontWeight: '800',
   },
-  timerTextDelayed: {
-    color: '#ffffff',
-  },
   kotNoteBox: {
-    backgroundColor: '#451a03',
-    borderRadius: theme.radius.md,
-    padding: theme.spacing.sm,
-    marginTop: theme.spacing.sm,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    borderRadius: 8,
+    padding: 10,
+    marginTop: 10,
     borderWidth: 1,
-    borderColor: '#7c2d12',
   },
   kotNoteText: {
-    color: '#ffedd5',
     fontSize: 12,
     fontWeight: '700',
+    flex: 1,
   },
   itemList: {
-    marginVertical: theme.spacing.md,
+    marginVertical: 12,
     gap: 8,
   },
   itemRow: {
@@ -291,10 +345,9 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   qtyBadge: {
-    backgroundColor: theme.colors.primary,
     paddingHorizontal: 8,
     paddingVertical: 4,
-    borderRadius: theme.radius.md,
+    borderRadius: 8,
   },
   qtyText: {
     color: '#ffffff',
@@ -302,45 +355,31 @@ const styles = StyleSheet.create({
     fontWeight: '800',
   },
   itemName: {
-    color: theme.colors.text,
     fontSize: 15,
     fontWeight: '700',
   },
   modifierText: {
-    color: theme.colors.primary,
     fontSize: 11,
     marginTop: 2,
   },
   itemNoteText: {
-    color: theme.colors.warning,
     fontSize: 11,
     fontStyle: 'italic',
     marginTop: 2,
   },
   footer: {
-    marginTop: theme.spacing.xs,
-  },
-  actionBtn: {
-    borderRadius: theme.radius.lg,
-    paddingVertical: 12,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  actionBtnText: {
-    color: '#ffffff',
-    fontSize: 14,
-    fontWeight: '800',
+    marginTop: 4,
   },
   completedBadge: {
-    backgroundColor: theme.colors.surfaceSubtle,
-    paddingVertical: 10,
-    borderRadius: theme.radius.md,
+    flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    paddingVertical: 10,
+    borderRadius: 10,
     borderWidth: 1,
-    borderColor: theme.colors.success,
   },
   completedBadgeText: {
-    color: theme.colors.success,
     fontSize: 13,
     fontWeight: '800',
   },

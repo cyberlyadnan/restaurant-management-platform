@@ -1,7 +1,7 @@
 import type { TableStatusDto } from '@nodedr-restaurant/types';
+import { ChevronRight, Users, Utensils } from 'lucide-react-native';
 import React, { useEffect, useState } from 'react';
 import {
-  ActivityIndicator,
   FlatList,
   RefreshControl,
   StyleSheet,
@@ -9,10 +9,13 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { api } from '../../api/client';
+import { SkeletonLoader } from '../../components/common/SkeletonLoader';
+import { StatusBadge } from '../../components/common/StatusBadge';
 import { useAuth } from '../../context/AuthContext';
+import { useAppTheme } from '../../context/ThemeContext';
 import { socketService } from '../../services/socket';
-import { theme } from '../../theme';
 
 interface TableItem {
   id: string;
@@ -34,6 +37,9 @@ const STATUS_FILTERS = ['ALL', 'AVAILABLE', 'OCCUPIED', 'FOOD READY'] as const;
 
 export function WaiterTablesScreen({ navigation }: any) {
   const { branchId } = useAuth();
+  const { theme } = useAppTheme();
+  const insets = useSafeAreaInsets();
+
   const [tables, setTables] = useState<TableItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -89,37 +95,21 @@ export function WaiterTablesScreen({ navigation }: any) {
     if (selectedFilter === 'ALL') return true;
     if (selectedFilter === 'AVAILABLE') return t.status === 'AVAILABLE';
     if (selectedFilter === 'OCCUPIED') return t.status === 'OCCUPIED';
-    if (selectedFilter === 'FOOD READY') return t.status === 'OCCUPIED' && t.activeOrder?.status === 'READY';
+    if (selectedFilter === 'FOOD READY')
+      return t.status === 'OCCUPIED' && t.activeOrder?.status === 'READY';
     return true;
   });
 
-  const getStatusBadge = (table: TableItem) => {
-    if (table.status === 'AVAILABLE') {
-      return { label: 'AVAILABLE', bg: theme.colors.surfaceSubtle, color: theme.colors.primary };
-    }
-    if (table.activeOrder?.status === 'READY') {
-      return { label: 'FOOD READY', bg: theme.colors.secondaryLight, color: theme.colors.secondary };
-    }
-    if (table.status === 'OCCUPIED') {
-      return { label: 'OCCUPIED', bg: theme.colors.surfaceSubtle, color: theme.colors.info };
-    }
-    return { label: table.status, bg: theme.colors.surfaceSubtle, color: theme.colors.textMuted };
-  };
-
-  if (loading && !refreshing) {
-    return (
-      <View style={styles.center}>
-        <ActivityIndicator size="large" color={theme.colors.primary} />
-      </View>
-    );
-  }
-
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
       {/* Header */}
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>Floor Layout & Tables</Text>
-        <Text style={styles.headerSubtitle}>{tables.length} Total Tables Registered</Text>
+      <View style={[styles.header, { paddingTop: insets.top + 16 }]}>
+        <Text style={[styles.headerTitle, { color: theme.colors.textPrimary }]}>
+          Floor Layout & Tables
+        </Text>
+        <Text style={[styles.headerSubtitle, { color: theme.colors.textMuted }]}>
+          {tables.length} Total Tables Registered
+        </Text>
       </View>
 
       {/* Filter Tabs */}
@@ -129,38 +119,63 @@ export function WaiterTablesScreen({ navigation }: any) {
           return (
             <TouchableOpacity
               key={f}
-              style={[styles.filterChip, isActive && styles.filterChipActive]}
+              style={[
+                styles.filterChip,
+                {
+                  backgroundColor: isActive ? theme.colors.primary : theme.colors.surface,
+                  borderColor: isActive ? theme.colors.primary : theme.colors.surfaceBorder,
+                },
+              ]}
               onPress={() => setSelectedFilter(f)}
               activeOpacity={0.7}
             >
-              <Text style={[styles.filterText, isActive && styles.filterTextActive]}>{f}</Text>
+              <Text
+                style={[
+                  styles.filterText,
+                  { color: isActive ? '#ffffff' : theme.colors.textMuted },
+                ]}
+              >
+                {f}
+              </Text>
             </TouchableOpacity>
           );
         })}
       </View>
 
       {/* Tables Grid */}
-      <FlatList
-        data={filteredTables}
-        keyExtractor={(item) => item.id}
-        numColumns={2}
-        columnWrapperStyle={styles.columnWrapper}
-        contentContainerStyle={styles.gridContent}
-        refreshControl={
-          <RefreshControl
-            refreshing={refreshing}
-            onRefresh={() => {
-              setRefreshing(true);
-              loadTables();
-            }}
-            tintColor={theme.colors.primary}
-          />
-        }
-        renderItem={({ item }) => {
-          const badge = getStatusBadge(item);
-          return (
+      {loading && !refreshing ? (
+        <View style={styles.skeletonGrid}>
+          <SkeletonLoader height={130} width="48%" borderRadius={14} />
+          <SkeletonLoader height={130} width="48%" borderRadius={14} />
+          <SkeletonLoader height={130} width="48%" borderRadius={14} />
+          <SkeletonLoader height={130} width="48%" borderRadius={14} />
+        </View>
+      ) : (
+        <FlatList
+          data={filteredTables}
+          keyExtractor={(item) => item.id}
+          numColumns={2}
+          columnWrapperStyle={styles.columnWrapper}
+          contentContainerStyle={[styles.gridContent, { paddingBottom: insets.bottom + 30 }]}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={() => {
+                setRefreshing(true);
+                loadTables();
+              }}
+              tintColor={theme.colors.primary}
+            />
+          }
+          renderItem={({ item }) => (
             <TouchableOpacity
-              style={styles.card}
+              style={[
+                styles.card,
+                {
+                  backgroundColor: theme.colors.surface,
+                  borderColor: theme.colors.surfaceBorder,
+                },
+              ]}
               onPress={() =>
                 navigation.navigate('Menu', {
                   tableId: item.id,
@@ -171,39 +186,68 @@ export function WaiterTablesScreen({ navigation }: any) {
               activeOpacity={0.8}
             >
               <View style={styles.cardHeader}>
-                <View style={styles.tableNumBadge}>
-                  <Text style={styles.tableNumText}>T-{item.number}</Text>
+                <View style={[styles.tableNumBadge, { backgroundColor: theme.colors.primaryLight }]}>
+                  <Text style={[styles.tableNumText, { color: theme.colors.primaryDark }]}>
+                    T-{item.number}
+                  </Text>
                 </View>
-                <View style={[styles.statusBadge, { backgroundColor: badge.bg }]}>
-                  <Text style={[styles.statusText, { color: badge.color }]}>{badge.label}</Text>
-                </View>
+                <StatusBadge
+                  status={
+                    item.activeOrder?.status === 'READY'
+                      ? 'FOOD READY'
+                      : item.status === 'AVAILABLE'
+                      ? 'AVAILABLE'
+                      : 'OCCUPIED'
+                  }
+                  size="sm"
+                />
               </View>
 
               <View style={styles.cardBody}>
-                <Text style={styles.guestText}>👥 Max {item.capacity} Guests</Text>
-                {item.floorName ? <Text style={styles.floorText}>{item.floorName}</Text> : null}
+                <View style={styles.guestRow}>
+                  <Users size={12} color={theme.colors.textMuted} />
+                  <Text style={[styles.guestText, { color: theme.colors.textMuted }]}>
+                    Max {item.capacity} Guests
+                  </Text>
+                </View>
+                {item.floorName ? (
+                  <Text style={[styles.floorText, { color: theme.colors.textMuted }]}>
+                    {item.floorName}
+                  </Text>
+                ) : null}
               </View>
 
-              <View style={styles.cardFooter}>
+              <View style={[styles.cardFooter, { borderColor: theme.colors.surfaceBorder }]}>
                 {item.activeOrder ? (
                   <View style={styles.orderSummary}>
-                    <Text style={styles.orderPrice}>₹{item.activeOrder.totalAmount.toLocaleString()}</Text>
-                    <Text style={styles.itemCount}>{item.activeOrder.itemCount} items</Text>
+                    <Text style={[styles.orderPrice, { color: theme.colors.textPrimary }]}>
+                      ₹{item.activeOrder.totalAmount.toLocaleString()}
+                    </Text>
+                    <Text style={[styles.itemCount, { color: theme.colors.textMuted }]}>
+                      {item.activeOrder.itemCount} items
+                    </Text>
                   </View>
                 ) : (
-                  <Text style={styles.availableAction}>Tap to seat / order ➔</Text>
+                  <View style={styles.availableActionRow}>
+                    <Text style={[styles.availableAction, { color: theme.colors.primary }]}>
+                      Start Order
+                    </Text>
+                    <ChevronRight size={12} color={theme.colors.primary} />
+                  </View>
                 )}
               </View>
             </TouchableOpacity>
-          );
-        }}
-        ListEmptyComponent={
-          <View style={styles.emptyContainer}>
-            <Text style={styles.emptyIcon}>🍽️</Text>
-            <Text style={styles.emptyTitle}>No tables match filter</Text>
-          </View>
-        }
-      />
+          )}
+          ListEmptyComponent={
+            <View style={styles.emptyContainer}>
+              <Utensils size={40} color={theme.colors.textMuted} style={{ marginBottom: 8 }} />
+              <Text style={[styles.emptyTitle, { color: theme.colors.textMuted }]}>
+                No tables match filter
+              </Text>
+            </View>
+          }
+        />
+      )}
     </View>
   );
 }
@@ -211,70 +255,54 @@ export function WaiterTablesScreen({ navigation }: any) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: theme.colors.background,
-  },
-  center: {
-    flex: 1,
-    backgroundColor: theme.colors.background,
-    justifyContent: 'center',
-    alignItems: 'center',
   },
   header: {
-    paddingHorizontal: theme.spacing.lg,
-    paddingTop: theme.spacing.lg,
-    paddingBottom: theme.spacing.md,
+    paddingHorizontal: 16,
+    paddingBottom: 12,
   },
   headerTitle: {
-    color: theme.colors.text,
     fontSize: 22,
     fontWeight: '800',
   },
   headerSubtitle: {
-    color: theme.colors.textMuted,
     fontSize: 12,
     marginTop: 2,
+    fontWeight: '600',
   },
   filterBar: {
     flexDirection: 'row',
-    paddingHorizontal: theme.spacing.lg,
+    paddingHorizontal: 16,
     gap: 8,
-    marginBottom: theme.spacing.md,
+    marginBottom: 12,
   },
   filterChip: {
     paddingHorizontal: 12,
     paddingVertical: 6,
-    borderRadius: theme.radius.full,
-    backgroundColor: theme.colors.surface,
+    borderRadius: 9999,
     borderWidth: 1,
-    borderColor: theme.colors.surfaceBorder,
-  },
-  filterChipActive: {
-    backgroundColor: theme.colors.primary,
-    borderColor: theme.colors.primary,
   },
   filterText: {
-    color: theme.colors.textMuted,
     fontSize: 11,
     fontWeight: '700',
   },
-  filterTextActive: {
-    color: '#ffffff',
+  skeletonGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    paddingHorizontal: 16,
+    gap: 12,
   },
   gridContent: {
-    paddingHorizontal: theme.spacing.lg,
-    paddingBottom: 30,
+    paddingHorizontal: 16,
   },
   columnWrapper: {
     justifyContent: 'space-between',
-    marginBottom: theme.spacing.md,
+    marginBottom: 12,
   },
   card: {
     width: '48%',
-    backgroundColor: theme.colors.surface,
-    borderRadius: theme.radius.lg,
-    padding: theme.spacing.md,
+    borderRadius: 14,
+    padding: 12,
     borderWidth: 1,
-    borderColor: theme.colors.surfaceBorder,
   },
   cardHeader: {
     flexDirection: 'row',
@@ -282,42 +310,33 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   tableNumBadge: {
-    backgroundColor: theme.colors.primaryLight,
     paddingHorizontal: 8,
     paddingVertical: 4,
-    borderRadius: theme.radius.md,
+    borderRadius: 8,
   },
   tableNumText: {
-    color: theme.colors.primaryDark,
     fontSize: 13,
     fontWeight: '800',
   },
-  statusBadge: {
-    paddingHorizontal: 6,
-    paddingVertical: 3,
-    borderRadius: theme.radius.sm,
-  },
-  statusText: {
-    fontSize: 9,
-    fontWeight: '800',
-  },
   cardBody: {
-    marginVertical: theme.spacing.md,
+    marginVertical: 12,
+  },
+  guestRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
   },
   guestText: {
-    color: theme.colors.textMuted,
-    fontSize: 12,
+    fontSize: 11,
     fontWeight: '600',
   },
   floorText: {
-    color: theme.colors.textDim,
     fontSize: 10,
     marginTop: 2,
   },
   cardFooter: {
     borderTopWidth: 1,
-    borderTopColor: theme.colors.surfaceBorder,
-    paddingTop: theme.spacing.sm,
+    paddingTop: 8,
   },
   orderSummary: {
     flexDirection: 'row',
@@ -325,29 +344,26 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   orderPrice: {
-    color: theme.colors.text,
     fontSize: 14,
     fontWeight: '800',
   },
   itemCount: {
-    color: theme.colors.textDim,
-    fontSize: 11,
+    fontSize: 10,
+  },
+  availableActionRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
   },
   availableAction: {
-    color: theme.colors.primary,
     fontSize: 11,
     fontWeight: '700',
   },
   emptyContainer: {
-    padding: theme.spacing.xxl,
+    padding: 32,
     alignItems: 'center',
   },
-  emptyIcon: {
-    fontSize: 40,
-    marginBottom: 8,
-  },
   emptyTitle: {
-    color: theme.colors.textMuted,
     fontSize: 14,
   },
 });

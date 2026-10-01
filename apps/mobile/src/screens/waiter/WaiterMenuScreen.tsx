@@ -1,18 +1,20 @@
+import { ChevronRight, Plus, ShoppingBag, UtensilsCrossed } from 'lucide-react-native';
 import React, { useEffect, useState } from 'react';
 import {
-  ActivityIndicator,
   FlatList,
   ScrollView,
   StyleSheet,
   Text,
-  TextInput,
   TouchableOpacity,
   View,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { api } from '../../api/client';
+import { SearchBar } from '../../components/common/SearchBar';
+import { SkeletonLoader } from '../../components/common/SkeletonLoader';
 import { ItemModifierModal, MenuItemData, ModifierChoice } from '../../components/ItemModifierModal';
 import { useAuth } from '../../context/AuthContext';
-import { theme } from '../../theme';
+import { useAppTheme } from '../../context/ThemeContext';
 
 export interface CartItem {
   id: string;
@@ -27,11 +29,14 @@ export interface CartItem {
 
 export function WaiterMenuScreen({ route, navigation }: any) {
   const { branchId } = useAuth();
+  const { theme } = useAppTheme();
+  const insets = useSafeAreaInsets();
+
   const initialTableId = route.params?.tableId || null;
   const initialTableName = route.params?.tableName || null;
 
-  const [tableId, setTableId] = useState<string | null>(initialTableId);
-  const [tableName, setTableName] = useState<string | null>(initialTableName);
+  const [tableId] = useState<string | null>(initialTableId);
+  const [tableName] = useState<string | null>(initialTableName);
 
   const [categories, setCategories] = useState<{ id: string; name: string }[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<string>('ALL');
@@ -39,7 +44,7 @@ export function WaiterMenuScreen({ route, navigation }: any) {
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
 
-  // Item customization modal
+  // Customization modal
   const [activeItem, setActiveItem] = useState<MenuItemData | null>(null);
   const [modalVisible, setModalVisible] = useState(false);
 
@@ -87,7 +92,6 @@ export function WaiterMenuScreen({ route, navigation }: any) {
       setActiveItem(item);
       setModalVisible(true);
     } else {
-      // Direct fast add
       handleAddToCart(item, 1, [], '');
     }
   };
@@ -143,50 +147,82 @@ export function WaiterMenuScreen({ route, navigation }: any) {
     return matchesSearch;
   });
 
-  if (loading) {
-    return (
-      <View style={styles.center}>
-        <ActivityIndicator size="large" color={theme.colors.primary} />
-      </View>
-    );
-  }
-
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
       {/* Table Selector Header */}
-      <View style={styles.tableHeader}>
+      <View
+        style={[
+          styles.tableHeader,
+          {
+            backgroundColor: theme.colors.surface,
+            borderColor: theme.colors.surfaceBorder,
+            paddingTop: insets.top + 8,
+          },
+        ]}
+      >
         <View>
-          <Text style={styles.tableHeaderLabel}>ASSIGNED TABLE</Text>
-          <Text style={styles.tableHeaderVal}>{tableName || 'Select Table'}</Text>
+          <Text style={[styles.tableHeaderLabel, { color: theme.colors.textMuted }]}>
+            TARGET TABLE
+          </Text>
+          <Text style={[styles.tableHeaderVal, { color: theme.colors.textPrimary }]}>
+            {tableName || 'Select Table'}
+          </Text>
         </View>
 
         <TouchableOpacity
-          style={styles.changeTableBtn}
+          style={[
+            styles.changeTableBtn,
+            { backgroundColor: theme.colors.surfaceSubtle },
+          ]}
           onPress={() => navigation.navigate('Tables')}
+          activeOpacity={0.7}
         >
-          <Text style={styles.changeTableBtnText}>Change ➔</Text>
+          <Text style={[styles.changeTableBtnText, { color: theme.colors.primary }]}>
+            Change Table
+          </Text>
+          <ChevronRight size={14} color={theme.colors.primary} />
         </TouchableOpacity>
       </View>
 
       {/* Search Input */}
       <View style={styles.searchSection}>
-        <TextInput
-          style={styles.searchInput}
-          placeholder="Search items (e.g. Tikka, Naan, Drinks)..."
-          placeholderTextColor={theme.colors.textDim}
+        <SearchBar
           value={searchQuery}
           onChangeText={setSearchQuery}
+          placeholder="Search items (e.g. Tikka, Naan, Drinks)..."
         />
       </View>
 
       {/* Categories Horizontal Tabs */}
       <View style={styles.categoryBarContainer}>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.categoryBar}>
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.categoryBar}
+        >
           <TouchableOpacity
-            style={[styles.catChip, selectedCategory === 'ALL' && styles.catChipActive]}
+            style={[
+              styles.catChip,
+              {
+                backgroundColor:
+                  selectedCategory === 'ALL' ? theme.colors.primary : theme.colors.surface,
+                borderColor:
+                  selectedCategory === 'ALL'
+                    ? theme.colors.primary
+                    : theme.colors.surfaceBorder,
+              },
+            ]}
             onPress={() => setSelectedCategory('ALL')}
+            activeOpacity={0.7}
           >
-            <Text style={[styles.catText, selectedCategory === 'ALL' && styles.catTextActive]}>All Items</Text>
+            <Text
+              style={[
+                styles.catText,
+                { color: selectedCategory === 'ALL' ? '#ffffff' : theme.colors.textMuted },
+              ]}
+            >
+              All Items
+            </Text>
           </TouchableOpacity>
 
           {categories.map((cat) => {
@@ -194,51 +230,108 @@ export function WaiterMenuScreen({ route, navigation }: any) {
             return (
               <TouchableOpacity
                 key={cat.id}
-                style={[styles.catChip, isActive && styles.catChipActive]}
+                style={[
+                  styles.catChip,
+                  {
+                    backgroundColor: isActive ? theme.colors.primary : theme.colors.surface,
+                    borderColor: isActive ? theme.colors.primary : theme.colors.surfaceBorder,
+                  },
+                ]}
                 onPress={() => setSelectedCategory(cat.id)}
+                activeOpacity={0.7}
               >
-                <Text style={[styles.catText, isActive && styles.catTextActive]}>{cat.name}</Text>
+                <Text
+                  style={[
+                    styles.catText,
+                    { color: isActive ? '#ffffff' : theme.colors.textMuted },
+                  ]}
+                >
+                  {cat.name}
+                </Text>
               </TouchableOpacity>
             );
           })}
         </ScrollView>
       </View>
 
-      {/* Menu Item Cards */}
-      <FlatList
-        data={filteredItems}
-        keyExtractor={(item) => item.id}
-        contentContainerStyle={styles.listContent}
-        renderItem={({ item }) => (
-          <TouchableOpacity
-            style={styles.itemCard}
-            onPress={() => handleOpenItem(item)}
-            activeOpacity={0.7}
-          >
-            <View style={{ flex: 1 }}>
-              <View style={styles.itemHeader}>
-                <View style={[styles.dietBadge, { borderColor: item.isVeg ? theme.colors.veg : theme.colors.nonVeg }]}>
-                  <View style={[styles.dietDot, { backgroundColor: item.isVeg ? theme.colors.veg : theme.colors.nonVeg }]} />
+      {/* Menu Items List */}
+      {loading ? (
+        <View style={{ paddingHorizontal: 16, gap: 10 }}>
+          <SkeletonLoader height={70} borderRadius={14} />
+          <SkeletonLoader height={70} borderRadius={14} />
+          <SkeletonLoader height={70} borderRadius={14} />
+        </View>
+      ) : (
+        <FlatList
+          data={filteredItems}
+          keyExtractor={(item) => item.id}
+          contentContainerStyle={[styles.listContent, { paddingBottom: insets.bottom + 100 }]}
+          renderItem={({ item }) => (
+            <TouchableOpacity
+              style={[
+                styles.itemCard,
+                {
+                  backgroundColor: theme.colors.surface,
+                  borderColor: theme.colors.surfaceBorder,
+                },
+              ]}
+              onPress={() => handleOpenItem(item)}
+              activeOpacity={0.75}
+            >
+              <View style={{ flex: 1 }}>
+                <View style={styles.itemHeader}>
+                  <View
+                    style={[
+                      styles.dietBadge,
+                      { borderColor: item.isVeg ? theme.colors.veg : theme.colors.nonVeg },
+                    ]}
+                  >
+                    <View
+                      style={[
+                        styles.dietDot,
+                        { backgroundColor: item.isVeg ? theme.colors.veg : theme.colors.nonVeg },
+                      ]}
+                    />
+                  </View>
+                  <Text style={[styles.itemName, { color: theme.colors.textPrimary }]}>
+                    {item.name}
+                  </Text>
                 </View>
-                <Text style={styles.itemName}>{item.name}</Text>
+
+                {item.description ? (
+                  <Text style={[styles.itemDesc, { color: theme.colors.textMuted }]}>
+                    {item.description}
+                  </Text>
+                ) : null}
+                <Text style={[styles.itemPrice, { color: theme.colors.primary }]}>
+                  ₹{item.price}
+                </Text>
               </View>
 
-              {item.description ? <Text style={styles.itemDesc}>{item.description}</Text> : null}
-              <Text style={styles.itemPrice}>₹{item.price}</Text>
-            </View>
-
-            <TouchableOpacity
-              style={styles.addBtn}
-              onPress={() => handleOpenItem(item)}
-              activeOpacity={0.8}
-            >
-              <Text style={styles.addBtnText}>+ ADD</Text>
+              <TouchableOpacity
+                style={[styles.addBtn, { backgroundColor: theme.colors.primaryLight }]}
+                onPress={() => handleOpenItem(item)}
+                activeOpacity={0.8}
+              >
+                <Plus size={14} color={theme.colors.primaryDark} />
+                <Text style={[styles.addBtnText, { color: theme.colors.primaryDark }]}>
+                  ADD
+                </Text>
+              </TouchableOpacity>
             </TouchableOpacity>
-          </TouchableOpacity>
-        )}
-      />
+          )}
+          ListEmptyComponent={
+            <View style={styles.emptyContainer}>
+              <UtensilsCrossed size={36} color={theme.colors.textMuted} style={{ marginBottom: 8 }} />
+              <Text style={[styles.emptyTitle, { color: theme.colors.textMuted }]}>
+                No menu items found
+              </Text>
+            </View>
+          }
+        />
+      )}
 
-      {/* Item Customization Bottom Sheet */}
+      {/* Item Customization Modal */}
       <ItemModifierModal
         visible={modalVisible}
         item={activeItem}
@@ -248,9 +341,18 @@ export function WaiterMenuScreen({ route, navigation }: any) {
 
       {/* Floating Cart CTA Footer */}
       {cartCount > 0 && (
-        <View style={styles.cartBar}>
+        <View
+          style={[
+            styles.cartBar,
+            {
+              backgroundColor: theme.colors.surface,
+              borderColor: theme.colors.surfaceBorder,
+              paddingBottom: insets.bottom + 10,
+            },
+          ]}
+        >
           <TouchableOpacity
-            style={styles.cartBarBtn}
+            style={[styles.cartBarBtn, { backgroundColor: theme.colors.primary }]}
             onPress={() =>
               navigation.navigate('Cart', {
                 tableId,
@@ -263,12 +365,17 @@ export function WaiterMenuScreen({ route, navigation }: any) {
           >
             <View style={styles.cartBadgeGroup}>
               <View style={styles.cartBadge}>
-                <Text style={styles.cartBadgeText}>{cartCount}</Text>
+                <ShoppingBag size={14} color={theme.colors.primary} />
               </View>
-              <Text style={styles.cartBarTotal}>₹{cartSubtotal.toLocaleString()}</Text>
+              <Text style={styles.cartBarTotal}>
+                {cartCount} Items • ₹{cartSubtotal.toLocaleString()}
+              </Text>
             </View>
 
-            <Text style={styles.cartBarCta}>View Cart & Send KOT ➔</Text>
+            <View style={styles.cartCtaRow}>
+              <Text style={styles.cartBarCta}>View Cart & Send KOT</Text>
+              <ChevronRight size={16} color="#ffffff" />
+            </View>
           </TouchableOpacity>
         </View>
       )}
@@ -279,97 +386,64 @@ export function WaiterMenuScreen({ route, navigation }: any) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: theme.colors.background,
-  },
-  center: {
-    flex: 1,
-    backgroundColor: theme.colors.background,
-    justifyContent: 'center',
-    alignItems: 'center',
   },
   tableHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    backgroundColor: theme.colors.surface,
-    paddingHorizontal: theme.spacing.lg,
-    paddingVertical: theme.spacing.md,
+    paddingHorizontal: 16,
+    paddingBottom: 12,
     borderBottomWidth: 1,
-    borderBottomColor: theme.colors.surfaceBorder,
   },
   tableHeaderLabel: {
-    color: theme.colors.textDim,
     fontSize: 10,
     fontWeight: '800',
   },
   tableHeaderVal: {
-    color: theme.colors.text,
     fontSize: 16,
     fontWeight: '800',
   },
   changeTableBtn: {
-    backgroundColor: theme.colors.surfaceSubtle,
-    paddingHorizontal: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingHorizontal: 10,
     paddingVertical: 6,
-    borderRadius: theme.radius.md,
+    borderRadius: 8,
   },
   changeTableBtnText: {
-    color: theme.colors.primary,
     fontSize: 12,
     fontWeight: '700',
   },
   searchSection: {
-    paddingHorizontal: theme.spacing.lg,
-    paddingTop: theme.spacing.md,
-  },
-  searchInput: {
-    backgroundColor: theme.colors.surface,
-    borderRadius: theme.radius.lg,
-    borderWidth: 1,
-    borderColor: theme.colors.surfaceBorder,
-    color: theme.colors.text,
-    fontSize: 13,
-    paddingHorizontal: 14,
-    paddingVertical: 10,
+    paddingHorizontal: 16,
+    paddingTop: 12,
   },
   categoryBarContainer: {
-    marginVertical: theme.spacing.md,
+    marginVertical: 12,
   },
   categoryBar: {
-    paddingHorizontal: theme.spacing.lg,
+    paddingHorizontal: 16,
     gap: 8,
   },
   catChip: {
-    backgroundColor: theme.colors.surface,
-    borderRadius: theme.radius.full,
+    borderRadius: 9999,
     paddingHorizontal: 14,
     paddingVertical: 8,
     borderWidth: 1,
-    borderColor: theme.colors.surfaceBorder,
-  },
-  catChipActive: {
-    backgroundColor: theme.colors.primary,
-    borderColor: theme.colors.primary,
   },
   catText: {
-    color: theme.colors.textMuted,
     fontSize: 12,
     fontWeight: '700',
   },
-  catTextActive: {
-    color: '#ffffff',
-  },
   listContent: {
-    paddingHorizontal: theme.spacing.lg,
-    paddingBottom: 100,
+    paddingHorizontal: 16,
   },
   itemCard: {
-    backgroundColor: theme.colors.surface,
-    borderRadius: theme.radius.lg,
-    padding: theme.spacing.md,
-    marginBottom: theme.spacing.sm,
+    borderRadius: 14,
+    padding: 14,
+    marginBottom: 8,
     borderWidth: 1,
-    borderColor: theme.colors.surfaceBorder,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
@@ -393,30 +467,28 @@ const styles = StyleSheet.create({
     borderRadius: 2,
   },
   itemName: {
-    color: theme.colors.text,
     fontSize: 15,
     fontWeight: '700',
   },
   itemDesc: {
-    color: theme.colors.textMuted,
     fontSize: 11,
     marginTop: 2,
   },
   itemPrice: {
-    color: theme.colors.primary,
     fontSize: 14,
     fontWeight: '800',
     marginTop: 6,
   },
   addBtn: {
-    backgroundColor: theme.colors.primaryLight,
-    paddingHorizontal: 14,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingHorizontal: 12,
     paddingVertical: 8,
-    borderRadius: theme.radius.md,
-    marginLeft: theme.spacing.md,
+    borderRadius: 8,
+    marginLeft: 12,
   },
   addBtnText: {
-    color: theme.colors.primaryDark,
     fontSize: 12,
     fontWeight: '800',
   },
@@ -425,14 +497,11 @@ const styles = StyleSheet.create({
     bottom: 0,
     left: 0,
     right: 0,
-    backgroundColor: theme.colors.surface,
     borderTopWidth: 1,
-    borderTopColor: theme.colors.surfaceBorder,
-    padding: theme.spacing.md,
+    padding: 12,
   },
   cartBarBtn: {
-    backgroundColor: theme.colors.primary,
-    borderRadius: theme.radius.lg,
+    borderRadius: 14,
     paddingVertical: 14,
     paddingHorizontal: 16,
     flexDirection: 'row',
@@ -442,29 +511,36 @@ const styles = StyleSheet.create({
   cartBadgeGroup: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 10,
+    gap: 8,
   },
   cartBadge: {
     backgroundColor: '#ffffff',
-    width: 24,
-    height: 24,
-    borderRadius: 12,
+    width: 26,
+    height: 26,
+    borderRadius: 13,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  cartBadgeText: {
-    color: theme.colors.primary,
-    fontSize: 12,
-    fontWeight: '800',
-  },
   cartBarTotal: {
     color: '#ffffff',
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: '800',
+  },
+  cartCtaRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
   },
   cartBarCta: {
     color: '#ffffff',
     fontSize: 13,
     fontWeight: '800',
+  },
+  emptyContainer: {
+    padding: 32,
+    alignItems: 'center',
+  },
+  emptyTitle: {
+    fontSize: 14,
   },
 });

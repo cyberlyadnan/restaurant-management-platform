@@ -1,6 +1,6 @@
+import { Check, Package, Receipt } from 'lucide-react-native';
 import React, { useEffect, useState } from 'react';
 import {
-  ActivityIndicator,
   Alert,
   FlatList,
   RefreshControl,
@@ -9,10 +9,13 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { api } from '../../api/client';
+import { SkeletonLoader } from '../../components/common/SkeletonLoader';
+import { StatusBadge } from '../../components/common/StatusBadge';
 import { useAuth } from '../../context/AuthContext';
+import { useAppTheme } from '../../context/ThemeContext';
 import { socketService } from '../../services/socket';
-import { theme } from '../../theme';
 
 interface OrderItem {
   id: string;
@@ -34,6 +37,9 @@ const ORDER_TABS = ['ACTIVE', 'READY', 'COMPLETED'] as const;
 
 export function WaiterOrdersScreen() {
   const { branchId } = useAuth();
+  const { theme } = useAppTheme();
+  const insets = useSafeAreaInsets();
+
   const [orders, setOrders] = useState<OrderItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -109,34 +115,16 @@ export function WaiterOrdersScreen() {
     return o.status !== 'COMPLETED' && o.status !== 'CANCELLED';
   });
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'READY':
-        return theme.colors.success;
-      case 'PREPARING':
-      case 'IN_PROGRESS':
-        return theme.colors.warning;
-      case 'DELIVERED':
-        return theme.colors.info;
-      default:
-        return theme.colors.textMuted;
-    }
-  };
-
-  if (loading && !refreshing) {
-    return (
-      <View style={styles.center}>
-        <ActivityIndicator size="large" color={theme.colors.primary} />
-      </View>
-    );
-  }
-
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
       {/* Header */}
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>Active Waiter Orders</Text>
-        <Text style={styles.headerSubtitle}>Real-time status updates from kitchen</Text>
+      <View style={[styles.header, { paddingTop: insets.top + 16 }]}>
+        <Text style={[styles.headerTitle, { color: theme.colors.textPrimary }]}>
+          Active Waiter Orders
+        </Text>
+        <Text style={[styles.headerSubtitle, { color: theme.colors.textMuted }]}>
+          Real-time status updates from kitchen
+        </Text>
       </View>
 
       {/* Tabs */}
@@ -146,98 +134,158 @@ export function WaiterOrdersScreen() {
           return (
             <TouchableOpacity
               key={tab}
-              style={[styles.tabChip, isActive && styles.tabChipActive]}
+              style={[
+                styles.tabChip,
+                {
+                  backgroundColor: isActive ? theme.colors.primary : theme.colors.surface,
+                  borderColor: isActive ? theme.colors.primary : theme.colors.surfaceBorder,
+                },
+              ]}
               onPress={() => setSelectedTab(tab)}
+              activeOpacity={0.7}
             >
-              <Text style={[styles.tabText, isActive && styles.tabTextActive]}>{tab}</Text>
+              <Text
+                style={[
+                  styles.tabText,
+                  { color: isActive ? '#ffffff' : theme.colors.textMuted },
+                ]}
+              >
+                {tab}
+              </Text>
             </TouchableOpacity>
           );
         })}
       </View>
 
       {/* Orders List */}
-      <FlatList
-        data={filteredOrders}
-        keyExtractor={(item) => item.id}
-        contentContainerStyle={styles.listContent}
-        refreshControl={
-          <RefreshControl
-            refreshing={refreshing}
-            onRefresh={() => {
-              setRefreshing(true);
-              fetchOrders();
-            }}
-            tintColor={theme.colors.primary}
-          />
-        }
-        renderItem={({ item }) => {
-          const isReady = item.status === 'READY';
-          const isDelivered = item.status === 'DELIVERED';
-          return (
-            <View style={styles.orderCard}>
-              <View style={styles.cardHeader}>
-                <View style={styles.orderTitleGroup}>
-                  <Text style={styles.orderNumber}>#{item.orderNumber}</Text>
-                  {item.tableNumber ? (
-                    <View style={styles.tableBadge}>
-                      <Text style={styles.tableBadgeText}>Table {item.tableNumber}</Text>
-                    </View>
-                  ) : (
-                    <View style={styles.takeawayBadge}>
-                      <Text style={styles.takeawayText}>Takeaway</Text>
-                    </View>
-                  )}
+      {loading && !refreshing ? (
+        <View style={{ paddingHorizontal: 16, gap: 12 }}>
+          <SkeletonLoader height={120} borderRadius={14} />
+          <SkeletonLoader height={120} borderRadius={14} />
+        </View>
+      ) : (
+        <FlatList
+          data={filteredOrders}
+          keyExtractor={(item) => item.id}
+          contentContainerStyle={[styles.listContent, { paddingBottom: insets.bottom + 30 }]}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={() => {
+                setRefreshing(true);
+                fetchOrders();
+              }}
+              tintColor={theme.colors.primary}
+            />
+          }
+          renderItem={({ item }) => {
+            const isReady = item.status === 'READY';
+            const isDelivered = item.status === 'DELIVERED';
+            return (
+              <View
+                style={[
+                  styles.orderCard,
+                  {
+                    backgroundColor: theme.colors.surface,
+                    borderColor: theme.colors.surfaceBorder,
+                  },
+                ]}
+              >
+                <View
+                  style={[
+                    styles.cardHeader,
+                    { borderColor: theme.colors.surfaceBorder },
+                  ]}
+                >
+                  <View style={styles.orderTitleGroup}>
+                    <Text style={[styles.orderNumber, { color: theme.colors.textPrimary }]}>
+                      #{item.orderNumber}
+                    </Text>
+                    {item.tableNumber ? (
+                      <View style={[styles.tableBadge, { backgroundColor: theme.colors.primaryLight }]}>
+                        <Text style={[styles.tableBadgeText, { color: theme.colors.primaryDark }]}>
+                          Table {item.tableNumber}
+                        </Text>
+                      </View>
+                    ) : (
+                      <View style={[styles.takeawayBadge, { backgroundColor: theme.colors.surfaceSubtle }]}>
+                        <Text style={[styles.takeawayText, { color: theme.colors.textMuted }]}>
+                          Takeaway
+                        </Text>
+                      </View>
+                    )}
+                  </View>
+
+                  <StatusBadge status={item.status} size="sm" />
                 </View>
 
-                <View style={[styles.statusBadge, { borderColor: getStatusColor(item.status) }]}>
-                  <Text style={[styles.statusBadgeText, { color: getStatusColor(item.status) }]}>
-                    {item.status}
-                  </Text>
-                </View>
-              </View>
-
-              {/* Items preview */}
-              <View style={styles.itemsList}>
-                {item.items.map((it) => (
-                  <Text key={it.id} style={styles.itemLine}>
-                    • {it.quantity}× {it.menuItem?.name || 'Item'}
-                  </Text>
-                ))}
-              </View>
-
-              <View style={styles.cardFooter}>
-                <Text style={styles.totalPrice}>₹{item.totalAmount.toLocaleString()}</Text>
-
-                <View style={styles.actionsGroup}>
-                  {isReady && (
-                    <TouchableOpacity
-                      style={styles.deliverBtn}
-                      onPress={() => handleMarkDelivered(item.id)}
+                {/* Items preview */}
+                <View style={styles.itemsList}>
+                  {item.items.map((it) => (
+                    <Text
+                      key={it.id}
+                      style={[styles.itemLine, { color: theme.colors.textSecondary }]}
                     >
-                      <Text style={styles.deliverBtnText}>✓ Mark Delivered</Text>
-                    </TouchableOpacity>
-                  )}
+                      • {it.quantity}× {it.menuItem?.name || 'Item'}
+                    </Text>
+                  ))}
+                </View>
 
-                  {!isDelivered && (
-                    <TouchableOpacity
-                      style={styles.billBtn}
-                      onPress={() => handleRequestBill(item.id, item.tableNumber)}
-                    >
-                      <Text style={styles.billBtnText}>📄 Request Bill</Text>
-                    </TouchableOpacity>
-                  )}
+                <View
+                  style={[
+                    styles.cardFooter,
+                    { borderColor: theme.colors.surfaceBorder },
+                  ]}
+                >
+                  <Text style={[styles.totalPrice, { color: theme.colors.textPrimary }]}>
+                    ₹{item.totalAmount.toLocaleString()}
+                  </Text>
+
+                  <View style={styles.actionsGroup}>
+                    {isReady && (
+                      <TouchableOpacity
+                        style={[styles.deliverBtn, { backgroundColor: theme.colors.success }]}
+                        onPress={() => handleMarkDelivered(item.id)}
+                        activeOpacity={0.8}
+                      >
+                        <Check size={14} color="#ffffff" />
+                        <Text style={styles.deliverBtnText}>Mark Delivered</Text>
+                      </TouchableOpacity>
+                    )}
+
+                    {!isDelivered && (
+                      <TouchableOpacity
+                        style={[
+                          styles.billBtn,
+                          {
+                            backgroundColor: theme.colors.surfaceSubtle,
+                            borderColor: theme.colors.surfaceBorder,
+                          },
+                        ]}
+                        onPress={() => handleRequestBill(item.id, item.tableNumber)}
+                        activeOpacity={0.8}
+                      >
+                        <Receipt size={14} color={theme.colors.textPrimary} />
+                        <Text style={[styles.billBtnText, { color: theme.colors.textPrimary }]}>
+                          Request Bill
+                        </Text>
+                      </TouchableOpacity>
+                    )}
+                  </View>
                 </View>
               </View>
+            );
+          }}
+          ListEmptyComponent={
+            <View style={styles.emptyContainer}>
+              <Package size={40} color={theme.colors.textMuted} style={{ marginBottom: 8 }} />
+              <Text style={[styles.emptyTitle, { color: theme.colors.textMuted }]}>
+                No orders in {selectedTab}
+              </Text>
             </View>
-          );
-        }}
-        ListEmptyComponent={
-          <View style={styles.emptyContainer}>
-            <Text style={styles.emptyIcon}>📦</Text>
-            <Text style={styles.emptyTitle}>No orders in {selectedTab}</Text>
-          </View>
-        }
-      />
+          }
+        />
+      )}
     </View>
   );
 }
@@ -245,75 +293,52 @@ export function WaiterOrdersScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: theme.colors.background,
-  },
-  center: {
-    flex: 1,
-    backgroundColor: theme.colors.background,
-    justifyContent: 'center',
-    alignItems: 'center',
   },
   header: {
-    paddingHorizontal: theme.spacing.lg,
-    paddingTop: theme.spacing.lg,
-    paddingBottom: theme.spacing.md,
+    paddingHorizontal: 16,
+    paddingBottom: 12,
   },
   headerTitle: {
-    color: theme.colors.text,
     fontSize: 22,
     fontWeight: '800',
   },
   headerSubtitle: {
-    color: theme.colors.textMuted,
     fontSize: 12,
     marginTop: 2,
+    fontWeight: '600',
   },
   tabBar: {
     flexDirection: 'row',
-    paddingHorizontal: theme.spacing.lg,
+    paddingHorizontal: 16,
     gap: 8,
-    marginBottom: theme.spacing.md,
+    marginBottom: 12,
   },
   tabChip: {
     flex: 1,
     paddingVertical: 8,
-    borderRadius: theme.radius.md,
-    backgroundColor: theme.colors.surface,
+    borderRadius: 10,
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: theme.colors.surfaceBorder,
-  },
-  tabChipActive: {
-    backgroundColor: theme.colors.primary,
-    borderColor: theme.colors.primary,
   },
   tabText: {
-    color: theme.colors.textMuted,
     fontSize: 12,
     fontWeight: '700',
   },
-  tabTextActive: {
-    color: '#ffffff',
-  },
   listContent: {
-    paddingHorizontal: theme.spacing.lg,
-    paddingBottom: 30,
+    paddingHorizontal: 16,
   },
   orderCard: {
-    backgroundColor: theme.colors.surface,
-    borderRadius: theme.radius.lg,
-    padding: theme.spacing.md,
-    marginBottom: theme.spacing.md,
+    borderRadius: 14,
+    padding: 14,
+    marginBottom: 12,
     borderWidth: 1,
-    borderColor: theme.colors.surfaceBorder,
   },
   cardHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingBottom: theme.spacing.sm,
+    paddingBottom: 10,
     borderBottomWidth: 1,
-    borderBottomColor: theme.colors.surfaceBorder,
   },
   orderTitleGroup: {
     flexDirection: 'row',
@@ -321,60 +346,42 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   orderNumber: {
-    color: theme.colors.text,
     fontSize: 16,
     fontWeight: '800',
   },
   tableBadge: {
-    backgroundColor: theme.colors.primaryLight,
     paddingHorizontal: 8,
     paddingVertical: 3,
-    borderRadius: theme.radius.sm,
+    borderRadius: 6,
   },
   tableBadgeText: {
-    color: theme.colors.primaryDark,
     fontSize: 11,
     fontWeight: '800',
   },
   takeawayBadge: {
-    backgroundColor: theme.colors.surfaceSubtle,
     paddingHorizontal: 8,
     paddingVertical: 3,
-    borderRadius: theme.radius.sm,
+    borderRadius: 6,
   },
   takeawayText: {
-    color: theme.colors.textMuted,
     fontSize: 11,
     fontWeight: '700',
   },
-  statusBadge: {
-    borderWidth: 1.5,
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: theme.radius.full,
-  },
-  statusBadgeText: {
-    fontSize: 10,
-    fontWeight: '800',
-  },
   itemsList: {
-    marginVertical: theme.spacing.md,
+    marginVertical: 12,
     gap: 4,
   },
   itemLine: {
-    color: theme.colors.textMuted,
     fontSize: 13,
   },
   cardFooter: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingTop: theme.spacing.sm,
+    paddingTop: 10,
     borderTopWidth: 1,
-    borderTopColor: theme.colors.surfaceBorder,
   },
   totalPrice: {
-    color: theme.colors.text,
     fontSize: 16,
     fontWeight: '800',
   },
@@ -383,10 +390,12 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   deliverBtn: {
-    backgroundColor: theme.colors.success,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
     paddingHorizontal: 12,
     paddingVertical: 6,
-    borderRadius: theme.radius.md,
+    borderRadius: 8,
   },
   deliverBtnText: {
     color: '#ffffff',
@@ -394,28 +403,23 @@ const styles = StyleSheet.create({
     fontWeight: '800',
   },
   billBtn: {
-    backgroundColor: theme.colors.surfaceSubtle,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
     paddingHorizontal: 12,
     paddingVertical: 6,
-    borderRadius: theme.radius.md,
+    borderRadius: 8,
     borderWidth: 1,
-    borderColor: theme.colors.surfaceBorder,
   },
   billBtnText: {
-    color: theme.colors.text,
     fontSize: 11,
     fontWeight: '700',
   },
   emptyContainer: {
-    padding: theme.spacing.xxl,
+    padding: 32,
     alignItems: 'center',
   },
-  emptyIcon: {
-    fontSize: 40,
-    marginBottom: 8,
-  },
   emptyTitle: {
-    color: theme.colors.textMuted,
     fontSize: 14,
   },
 });

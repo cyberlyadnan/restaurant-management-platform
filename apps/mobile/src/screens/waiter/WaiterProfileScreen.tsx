@@ -1,3 +1,4 @@
+import { Check, Info, LogOut, Store, User } from 'lucide-react-native';
 import React from 'react';
 import {
   ScrollView,
@@ -6,45 +7,107 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { Button } from '../../components/common/Button';
+import { ThemeToggle } from '../../components/common/ThemeToggle';
 import { useAuth } from '../../context/AuthContext';
-import { theme } from '../../theme';
+import { useAppTheme } from '../../context/ThemeContext';
 
 export function WaiterProfileScreen() {
   const { user, branchId, branches, selectBranch, logout, isOwnerOrManager } = useAuth();
+  const { theme } = useAppTheme();
+  const insets = useSafeAreaInsets();
 
   const currentBranch = branches.find((b) => b.id === branchId);
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-      {/* Header */}
+    <ScrollView
+      style={[styles.container, { backgroundColor: theme.colors.background }]}
+      contentContainerStyle={[
+        styles.content,
+        { paddingTop: insets.top + 16, paddingBottom: insets.bottom + 30 },
+      ]}
+    >
+      {/* Header Profile */}
       <View style={styles.profileHeader}>
-        <View style={styles.avatarCircle}>
-          <Text style={styles.avatarText}>{user?.name?.charAt(0).toUpperCase() || 'S'}</Text>
+        <View style={[styles.avatarCircle, { backgroundColor: theme.colors.primary }]}>
+          <Text style={styles.avatarText}>
+            {user?.name?.charAt(0).toUpperCase() || 'S'}
+          </Text>
         </View>
 
-        <Text style={styles.userName}>{user?.name || 'Staff User'}</Text>
-        <Text style={styles.userRole}>
+        <Text style={[styles.userName, { color: theme.colors.textPrimary }]}>
+          {user?.name || 'Staff User'}
+        </Text>
+        <Text style={[styles.userRole, { color: theme.colors.textMuted }]}>
           {user?.roleName || 'Operational Staff'}
         </Text>
       </View>
 
+      {/* Theme Preference Switcher Card */}
+      <View
+        style={[
+          styles.sectionCard,
+          {
+            backgroundColor: theme.colors.surface,
+            borderColor: theme.colors.surfaceBorder,
+          },
+        ]}
+      >
+        <Text style={[styles.sectionTitle, { color: theme.colors.textPrimary }]}>
+          Appearance Mode
+        </Text>
+        <Text style={[styles.sectionDesc, { color: theme.colors.textMuted }]}>
+          Select your preferred mobile application color theme:
+        </Text>
+        <ThemeToggle />
+      </View>
+
       {/* Owner / Manager Restricted Notice */}
       {isOwnerOrManager && (
-        <View style={styles.managerNoticeCard}>
-          <Text style={styles.noticeTitle}>ℹ️ Operational Staff Mode</Text>
-          <Text style={styles.noticeBody}>
-            You are logged in with an Administrative / Owner account. Mobile access is optimized for fast restaurant staff operations (Waiters & Kitchen KDS).
+        <View
+          style={[
+            styles.managerNoticeCard,
+            {
+              backgroundColor: theme.colors.surfaceSubtle,
+              borderColor: theme.colors.warning,
+            },
+          ]}
+        >
+          <View style={styles.noticeTitleRow}>
+            <Info size={16} color={theme.colors.warning} />
+            <Text style={[styles.noticeTitle, { color: theme.colors.warning }]}>
+              Operational Staff Mode Active
+            </Text>
+          </View>
+          <Text style={[styles.noticeBody, { color: theme.colors.textPrimary }]}>
+            You are logged in with an Administrative account. Mobile access is optimized for fast restaurant staff operations (Waiters & Kitchen KDS).
           </Text>
-          <Text style={styles.noticeSub}>
+          <Text style={[styles.noticeSub, { color: theme.colors.textMuted }]}>
             For full management analytics, inventory control, and financial reporting, please access the Web Dashboard from your laptop or desktop browser.
           </Text>
         </View>
       )}
 
       {/* Branch Selector Card */}
-      <View style={styles.sectionCard}>
-        <Text style={styles.sectionTitle}>Active Restaurant Branch</Text>
-        <Text style={styles.sectionDesc}>Select the physical location terminal you are operating:</Text>
+      <View
+        style={[
+          styles.sectionCard,
+          {
+            backgroundColor: theme.colors.surface,
+            borderColor: theme.colors.surfaceBorder,
+          },
+        ]}
+      >
+        <View style={styles.cardHeaderRow}>
+          <Store size={16} color={theme.colors.primary} />
+          <Text style={[styles.sectionTitle, { color: theme.colors.textPrimary }]}>
+            Active Restaurant Branch
+          </Text>
+        </View>
+        <Text style={[styles.sectionDesc, { color: theme.colors.textMuted }]}>
+          Select the physical location terminal you are operating:
+        </Text>
 
         <View style={styles.branchList}>
           {branches.map((b) => {
@@ -52,16 +115,51 @@ export function WaiterProfileScreen() {
             return (
               <TouchableOpacity
                 key={b.id}
-                style={[styles.branchRow, isSelected && styles.branchRowSelected]}
+                style={[
+                  styles.branchRow,
+                  {
+                    backgroundColor: theme.colors.surfaceSubtle,
+                    borderColor: isSelected ? theme.colors.primary : theme.colors.surfaceBorder,
+                  },
+                ]}
                 onPress={() => selectBranch(b.id)}
+                activeOpacity={0.7}
               >
-                <View style={styles.radioDotOuter}>
-                  <View style={[styles.radioDotInner, isSelected && styles.radioDotActive]} />
+                <View
+                  style={[
+                    styles.radioDotOuter,
+                    {
+                      borderColor: isSelected
+                        ? theme.colors.primary
+                        : theme.colors.surfaceBorder,
+                    },
+                  ]}
+                >
+                  {isSelected && (
+                    <View
+                      style={[
+                        styles.radioDotInner,
+                        { backgroundColor: theme.colors.primary },
+                      ]}
+                    />
+                  )}
                 </View>
 
-                <Text style={[styles.branchName, isSelected && styles.branchNameSelected]}>
+                <Text
+                  style={[
+                    styles.branchName,
+                    {
+                      color: isSelected
+                        ? theme.colors.textPrimary
+                        : theme.colors.textMuted,
+                      fontWeight: isSelected ? '800' : '500',
+                    },
+                  ]}
+                >
                   {b.name}
                 </Text>
+
+                {isSelected && <Check size={16} color={theme.colors.primary} />}
               </TouchableOpacity>
             );
           })}
@@ -69,20 +167,43 @@ export function WaiterProfileScreen() {
       </View>
 
       {/* App Info & Sign Out */}
-      <View style={styles.sectionCard}>
-        <View style={styles.infoRow}>
-          <Text style={styles.infoKey}>App Version</Text>
-          <Text style={styles.infoVal}>v2.4.0 (Staff Mobile)</Text>
+      <View
+        style={[
+          styles.sectionCard,
+          {
+            backgroundColor: theme.colors.surface,
+            borderColor: theme.colors.surfaceBorder,
+          },
+        ]}
+      >
+        <View style={[styles.infoRow, { borderColor: theme.colors.surfaceBorder }]}>
+          <Text style={[styles.infoKey, { color: theme.colors.textMuted }]}>
+            App Version
+          </Text>
+          <Text style={[styles.infoVal, { color: theme.colors.textPrimary }]}>
+            v2.5.0 (Staff Mobile)
+          </Text>
         </View>
 
-        <View style={styles.infoRow}>
-          <Text style={styles.infoKey}>Active Terminal</Text>
-          <Text style={styles.infoVal}>{currentBranch?.name || 'Main Branch'}</Text>
+        <View style={[styles.infoRow, { borderColor: theme.colors.surfaceBorder }]}>
+          <Text style={[styles.infoKey, { color: theme.colors.textMuted }]}>
+            Active Terminal
+          </Text>
+          <Text style={[styles.infoVal, { color: theme.colors.textPrimary }]}>
+            {currentBranch?.name || 'Main Branch'}
+          </Text>
         </View>
 
-        <TouchableOpacity style={styles.logoutBtn} onPress={logout} activeOpacity={0.8}>
-          <Text style={styles.logoutBtnText}>Sign Out of Terminal</Text>
-        </TouchableOpacity>
+        <Button
+          variant="danger"
+          size="md"
+          fullWidth
+          onPress={logout}
+          style={styles.logoutBtn}
+          icon={<LogOut size={16} color="#ffffff" />}
+        >
+          Sign Out of Terminal
+        </Button>
       </View>
     </ScrollView>
   );
@@ -91,83 +212,80 @@ export function WaiterProfileScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: theme.colors.background,
   },
   content: {
-    padding: theme.spacing.lg,
-    paddingBottom: 40,
+    paddingHorizontal: 16,
   },
   profileHeader: {
     alignItems: 'center',
-    marginVertical: theme.spacing.xl,
+    marginVertical: 20,
   },
   avatarCircle: {
-    width: 72,
-    height: 72,
-    borderRadius: 36,
-    backgroundColor: theme.colors.primary,
+    width: 64,
+    height: 64,
+    borderRadius: 32,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: theme.spacing.md,
+    marginBottom: 10,
   },
   avatarText: {
     color: '#ffffff',
-    fontSize: 28,
+    fontSize: 26,
     fontWeight: '800',
   },
   userName: {
-    color: theme.colors.text,
-    fontSize: 22,
+    fontSize: 20,
     fontWeight: '800',
   },
   userRole: {
-    color: theme.colors.textMuted,
-    fontSize: 13,
+    fontSize: 12,
     marginTop: 2,
+    fontWeight: '600',
   },
   managerNoticeCard: {
-    backgroundColor: theme.colors.surfaceSubtle,
-    borderRadius: theme.radius.lg,
-    padding: theme.spacing.md,
+    borderRadius: 14,
+    padding: 14,
     borderWidth: 1,
-    borderColor: theme.colors.warning,
-    marginBottom: theme.spacing.lg,
+    marginBottom: 16,
   },
-  noticeTitle: {
-    color: theme.colors.warning,
-    fontSize: 14,
-    fontWeight: '800',
+  noticeTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
     marginBottom: 4,
   },
+  noticeTitle: {
+    fontSize: 13,
+    fontWeight: '800',
+  },
   noticeBody: {
-    color: theme.colors.text,
     fontSize: 12,
     lineHeight: 18,
   },
   noticeSub: {
-    color: theme.colors.textMuted,
     fontSize: 11,
     marginTop: 6,
     lineHeight: 16,
   },
   sectionCard: {
-    backgroundColor: theme.colors.surface,
-    borderRadius: theme.radius.lg,
-    padding: theme.spacing.md,
+    borderRadius: 14,
+    padding: 14,
     borderWidth: 1,
-    borderColor: theme.colors.surfaceBorder,
-    marginBottom: theme.spacing.lg,
+    marginBottom: 16,
+  },
+  cardHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
   },
   sectionTitle: {
-    color: theme.colors.text,
     fontSize: 15,
     fontWeight: '700',
   },
   sectionDesc: {
-    color: theme.colors.textMuted,
     fontSize: 11,
     marginTop: 2,
-    marginBottom: theme.spacing.md,
+    marginBottom: 12,
   },
   branchList: {
     gap: 8,
@@ -175,21 +293,15 @@ const styles = StyleSheet.create({
   branchRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: theme.spacing.md,
-    borderRadius: theme.radius.md,
-    backgroundColor: theme.colors.surfaceSubtle,
+    padding: 12,
+    borderRadius: 10,
     borderWidth: 1,
-    borderColor: theme.colors.surfaceBorder,
-  },
-  branchRowSelected: {
-    borderColor: theme.colors.primary,
   },
   radioDotOuter: {
     width: 18,
     height: 18,
     borderRadius: 9,
-    borderWidth: 2,
-    borderColor: theme.colors.surfaceBorder,
+    borderWidth: 1.5,
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: 10,
@@ -199,44 +311,24 @@ const styles = StyleSheet.create({
     height: 10,
     borderRadius: 5,
   },
-  radioDotActive: {
-    backgroundColor: theme.colors.primary,
-  },
   branchName: {
-    color: theme.colors.textMuted,
-    fontSize: 14,
-    fontWeight: '600',
-  },
-  branchNameSelected: {
-    color: theme.colors.text,
-    fontWeight: '800',
+    flex: 1,
+    fontSize: 13,
   },
   infoRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    paddingVertical: theme.spacing.sm,
+    paddingVertical: 8,
     borderBottomWidth: 1,
-    borderBottomColor: theme.colors.surfaceBorder,
   },
   infoKey: {
-    color: theme.colors.textMuted,
-    fontSize: 13,
+    fontSize: 12,
   },
   infoVal: {
-    color: theme.colors.text,
-    fontSize: 13,
+    fontSize: 12,
     fontWeight: '600',
   },
   logoutBtn: {
-    backgroundColor: theme.colors.danger,
-    borderRadius: theme.radius.md,
-    paddingVertical: 12,
-    alignItems: 'center',
-    marginTop: theme.spacing.lg,
-  },
-  logoutBtnText: {
-    color: '#ffffff',
-    fontSize: 14,
-    fontWeight: '800',
+    marginTop: 16,
   },
 });

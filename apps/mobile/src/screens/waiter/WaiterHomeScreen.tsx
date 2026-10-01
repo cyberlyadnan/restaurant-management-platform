@@ -1,7 +1,7 @@
 import type { TableStatusDto } from '@nodedr-restaurant/types';
+import { Bell, ChevronRight, Flame, Users, Utensils, Wifi, WifiOff } from 'lucide-react-native';
 import React, { useEffect, useState } from 'react';
 import {
-  ActivityIndicator,
   RefreshControl,
   ScrollView,
   StyleSheet,
@@ -9,10 +9,13 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { api } from '../../api/client';
+import { SkeletonLoader } from '../../components/common/SkeletonLoader';
+import { StatusBadge } from '../../components/common/StatusBadge';
 import { useAuth } from '../../context/AuthContext';
+import { useAppTheme } from '../../context/ThemeContext';
 import { socketService } from '../../services/socket';
-import { theme } from '../../theme';
 
 interface TableSummary {
   id: string;
@@ -32,6 +35,9 @@ interface TableSummary {
 
 export function WaiterHomeScreen({ navigation }: any) {
   const { user, branchId } = useAuth();
+  const { theme } = useAppTheme();
+  const insets = useSafeAreaInsets();
+
   const [tables, setTables] = useState<TableSummary[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -95,23 +101,21 @@ export function WaiterHomeScreen({ navigation }: any) {
 
   const occupiedTables = tables.filter((t) => t.status === 'OCCUPIED');
   const availableTables = tables.filter((t) => t.status === 'AVAILABLE');
-  const foodReadyTables = tables.filter((t) => t.status === 'OCCUPIED' && t.activeOrder?.status === 'READY');
+  const foodReadyTables = tables.filter(
+    (t) => t.status === 'OCCUPIED' && t.activeOrder?.status === 'READY',
+  );
 
   const nowHour = new Date().getHours();
-  const greeting = nowHour < 12 ? 'Good Morning' : nowHour < 17 ? 'Good Afternoon' : 'Good Evening';
-
-  if (loading && !refreshing) {
-    return (
-      <View style={styles.center}>
-        <ActivityIndicator size="large" color={theme.colors.primary} />
-      </View>
-    );
-  }
+  const greeting =
+    nowHour < 12 ? 'Good Morning' : nowHour < 17 ? 'Good Afternoon' : 'Good Evening';
 
   return (
     <ScrollView
-      style={styles.container}
-      contentContainerStyle={styles.content}
+      style={[styles.container, { backgroundColor: theme.colors.background }]}
+      contentContainerStyle={[
+        styles.content,
+        { paddingTop: insets.top + 16, paddingBottom: insets.bottom + 30 },
+      ]}
       refreshControl={
         <RefreshControl
           refreshing={refreshing}
@@ -123,16 +127,26 @@ export function WaiterHomeScreen({ navigation }: any) {
         />
       }
     >
-      {/* Network Connection Banner */}
+      {/* Network Connection Status Banner */}
       {networkState !== 'ONLINE' && (
         <View
           style={[
             styles.networkBanner,
-            { backgroundColor: networkState === 'CONNECTING' ? theme.colors.warning : theme.colors.danger },
+            {
+              backgroundColor:
+                networkState === 'CONNECTING' ? theme.colors.warning : theme.colors.danger,
+            },
           ]}
         >
+          {networkState === 'CONNECTING' ? (
+            <Wifi size={14} color="#ffffff" />
+          ) : (
+            <WifiOff size={14} color="#ffffff" />
+          )}
           <Text style={styles.networkBannerText}>
-            {networkState === 'CONNECTING' ? '⚡ Reconnecting live network...' : '⚠️ Offline Mode — Check Connection'}
+            {networkState === 'CONNECTING'
+              ? 'Reconnecting live network...'
+              : 'Offline Mode — Reconnecting...'}
           </Text>
         </View>
       )}
@@ -140,104 +154,211 @@ export function WaiterHomeScreen({ navigation }: any) {
       {/* Header Greeting */}
       <View style={styles.header}>
         <View>
-          <Text style={styles.greetingText}>{greeting},</Text>
-          <Text style={styles.userName}>{user?.name ?? 'Waiter'}</Text>
+          <Text style={[styles.greetingText, { color: theme.colors.textMuted }]}>
+            {greeting},
+          </Text>
+          <Text style={[styles.userName, { color: theme.colors.textPrimary }]}>
+            {user?.name ?? 'Waiter'}
+          </Text>
         </View>
 
         <TouchableOpacity
-          style={styles.badgeBtn}
+          style={[
+            styles.badgeBtn,
+            {
+              backgroundColor: theme.colors.surfaceSubtle,
+              borderColor: theme.colors.surfaceBorder,
+            },
+          ]}
           onPress={() => navigation.navigate('Notifications')}
+          activeOpacity={0.7}
         >
-          <Text style={styles.badgeBtnText}>🔔 Alerts</Text>
+          <Bell size={16} color={theme.colors.textPrimary} />
+          <Text style={[styles.badgeBtnText, { color: theme.colors.textPrimary }]}>
+            Alerts
+          </Text>
         </TouchableOpacity>
       </View>
 
       {/* Food Ready Urgent Action Banner */}
       {foodReadyTables.length > 0 && (
         <TouchableOpacity
-          style={styles.readyBanner}
+          style={[styles.readyBanner, { backgroundColor: theme.colors.secondary }]}
           onPress={() => navigation.navigate('Orders')}
           activeOpacity={0.8}
         >
           <View style={styles.readyBannerContent}>
-            <Text style={styles.readyBannerTitle}>🔥 FOOD READY FOR PICKUP!</Text>
+            <View style={styles.readyTitleRow}>
+              <Flame size={18} color="#ffffff" />
+              <Text style={styles.readyBannerTitle}>FOOD READY FOR PICKUP!</Text>
+            </View>
             <Text style={styles.readyBannerSub}>
               {foodReadyTables.length} table(s) have orders ready in the kitchen
             </Text>
           </View>
           <View style={styles.readyBannerTag}>
-            <Text style={styles.readyBannerTagText}>Serve Now ➔</Text>
+            <Text style={styles.readyBannerTagText}>Serve Now</Text>
+            <ChevronRight size={14} color={theme.colors.secondary} />
           </View>
         </TouchableOpacity>
       )}
 
       {/* Actionable Overview Metrics */}
-      <Text style={styles.sectionTitle}>What do you need to do right now?</Text>
+      <Text style={[styles.sectionTitle, { color: theme.colors.textPrimary }]}>
+        What do you need to do right now?
+      </Text>
 
-      <View style={styles.metricsGrid}>
-        <TouchableOpacity
-          style={[styles.metricCard, { borderColor: theme.colors.primary }]}
-          onPress={() => navigation.navigate('Tables')}
-        >
-          <Text style={styles.metricVal}>{occupiedTables.length}</Text>
-          <Text style={styles.metricLabel}>Occupied Tables</Text>
-        </TouchableOpacity>
+      {loading && !refreshing ? (
+        <View style={styles.metricsGrid}>
+          <SkeletonLoader height={70} borderRadius={14} width="30%" />
+          <SkeletonLoader height={70} borderRadius={14} width="30%" />
+          <SkeletonLoader height={70} borderRadius={14} width="30%" />
+        </View>
+      ) : (
+        <View style={styles.metricsGrid}>
+          <TouchableOpacity
+            style={[
+              styles.metricCard,
+              {
+                backgroundColor: theme.colors.surface,
+                borderColor: theme.colors.primary,
+              },
+            ]}
+            onPress={() => navigation.navigate('Tables')}
+            activeOpacity={0.7}
+          >
+            <Text style={[styles.metricVal, { color: theme.colors.textPrimary }]}>
+              {occupiedTables.length}
+            </Text>
+            <Text style={[styles.metricLabel, { color: theme.colors.textMuted }]}>
+              Occupied Tables
+            </Text>
+          </TouchableOpacity>
 
-        <TouchableOpacity
-          style={[styles.metricCard, { borderColor: theme.colors.warning }]}
-          onPress={() => navigation.navigate('Orders')}
-        >
-          <Text style={styles.metricVal}>{foodReadyTables.length}</Text>
-          <Text style={styles.metricLabel}>Ready to Serve</Text>
-        </TouchableOpacity>
+          <TouchableOpacity
+            style={[
+              styles.metricCard,
+              {
+                backgroundColor: theme.colors.surface,
+                borderColor: theme.colors.warning,
+              },
+            ]}
+            onPress={() => navigation.navigate('Orders')}
+            activeOpacity={0.7}
+          >
+            <Text style={[styles.metricVal, { color: theme.colors.textPrimary }]}>
+              {foodReadyTables.length}
+            </Text>
+            <Text style={[styles.metricLabel, { color: theme.colors.textMuted }]}>
+              Ready to Serve
+            </Text>
+          </TouchableOpacity>
 
-        <TouchableOpacity
-          style={[styles.metricCard, { borderColor: theme.colors.info }]}
-          onPress={() => navigation.navigate('Tables')}
-        >
-          <Text style={styles.metricVal}>{availableTables.length}</Text>
-          <Text style={styles.metricLabel}>Free Tables</Text>
-        </TouchableOpacity>
-      </View>
+          <TouchableOpacity
+            style={[
+              styles.metricCard,
+              {
+                backgroundColor: theme.colors.surface,
+                borderColor: theme.colors.info,
+              },
+            ]}
+            onPress={() => navigation.navigate('Tables')}
+            activeOpacity={0.7}
+          >
+            <Text style={[styles.metricVal, { color: theme.colors.textPrimary }]}>
+              {availableTables.length}
+            </Text>
+            <Text style={[styles.metricLabel, { color: theme.colors.textMuted }]}>
+              Free Tables
+            </Text>
+          </TouchableOpacity>
+        </View>
+      )}
 
       {/* Quick Access Active Tables */}
       <View style={styles.sectionHeader}>
-        <Text style={styles.sectionTitle}>Your Active Seated Tables</Text>
-        <TouchableOpacity onPress={() => navigation.navigate('Tables')}>
-          <Text style={styles.seeAllText}>View All Tables ➔</Text>
+        <Text style={[styles.sectionTitle, { color: theme.colors.textPrimary }]}>
+          Your Active Seated Tables
+        </Text>
+        <TouchableOpacity
+          onPress={() => navigation.navigate('Tables')}
+          style={styles.seeAllBtn}
+        >
+          <Text style={[styles.seeAllText, { color: theme.colors.primary }]}>
+            View All Layout
+          </Text>
+          <ChevronRight size={14} color={theme.colors.primary} />
         </TouchableOpacity>
       </View>
 
-      {occupiedTables.length === 0 ? (
-        <View style={styles.emptyCard}>
-          <Text style={styles.emptyIcon}>🍽️</Text>
-          <Text style={styles.emptyTitle}>No active seated tables</Text>
-          <Text style={styles.emptySub}>Tap &quot;Tables&quot; below to seat walk-in guests or start a new order.</Text>
+      {loading && !refreshing ? (
+        <View style={{ gap: 10 }}>
+          <SkeletonLoader height={80} borderRadius={14} />
+          <SkeletonLoader height={80} borderRadius={14} />
+        </View>
+      ) : occupiedTables.length === 0 ? (
+        <View
+          style={[
+            styles.emptyCard,
+            {
+              backgroundColor: theme.colors.surface,
+              borderColor: theme.colors.surfaceBorder,
+            },
+          ]}
+        >
+          <Utensils size={36} color={theme.colors.textMuted} style={{ marginBottom: 8 }} />
+          <Text style={[styles.emptyTitle, { color: theme.colors.textPrimary }]}>
+            No active seated tables
+          </Text>
+          <Text style={[styles.emptySub, { color: theme.colors.textMuted }]}>
+            Tap &quot;Tables&quot; below to seat walk-in guests or start a new order.
+          </Text>
         </View>
       ) : (
         occupiedTables.map((t) => (
           <TouchableOpacity
             key={t.id}
-            style={styles.tableCard}
-            onPress={() => navigation.navigate('Menu', { tableId: t.id, tableName: t.name || `Table ${t.number}` })}
-            activeOpacity={0.7}
+            style={[
+              styles.tableCard,
+              {
+                backgroundColor: theme.colors.surface,
+                borderColor: theme.colors.surfaceBorder,
+              },
+            ]}
+            onPress={() =>
+              navigation.navigate('Menu', {
+                tableId: t.id,
+                tableName: t.name || `Table ${t.number}`,
+              })
+            }
+            activeOpacity={0.75}
           >
             <View style={styles.tableCardHeader}>
-              <View style={styles.tableNumberBadge}>
-                <Text style={styles.tableNumberText}>T-{t.number}</Text>
-              </View>
-
-              <View style={styles.tableStatusTag}>
-                <Text style={styles.tableStatusText}>
-                  {t.activeOrder?.status === 'READY' ? '🟢 FOOD READY' : '🟠 IN PREPARATION'}
+              <View style={[styles.tableNumberBadge, { backgroundColor: theme.colors.primaryLight }]}>
+                <Text style={[styles.tableNumberText, { color: theme.colors.primaryDark }]}>
+                  T-{t.number}
                 </Text>
               </View>
+
+              <StatusBadge
+                status={t.activeOrder?.status === 'READY' ? 'READY' : 'PREPARING'}
+                label={t.activeOrder?.status === 'READY' ? 'FOOD READY' : 'PREPARING'}
+                size="sm"
+              />
             </View>
 
             <View style={styles.tableCardBody}>
-              <Text style={styles.tableMetaText}>👥 {t.capacity} Guests</Text>
+              <View style={styles.guestRow}>
+                <Users size={14} color={theme.colors.textMuted} />
+                <Text style={[styles.tableMetaText, { color: theme.colors.textMuted }]}>
+                  {t.capacity} Guests
+                </Text>
+              </View>
+
               {t.activeOrder && (
-                <Text style={styles.tablePriceText}>₹{t.activeOrder.totalAmount.toLocaleString()}</Text>
+                <Text style={[styles.tablePriceText, { color: theme.colors.textPrimary }]}>
+                  ₹{t.activeOrder.totalAmount.toLocaleString()}
+                </Text>
               )}
             </View>
           </TouchableOpacity>
@@ -250,24 +371,19 @@ export function WaiterHomeScreen({ navigation }: any) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: theme.colors.background,
   },
   content: {
-    padding: theme.spacing.lg,
-    paddingBottom: 40,
-  },
-  center: {
-    flex: 1,
-    backgroundColor: theme.colors.background,
-    justifyContent: 'center',
-    alignItems: 'center',
+    paddingHorizontal: 16,
   },
   networkBanner: {
-    paddingVertical: 6,
-    paddingHorizontal: 12,
-    borderRadius: theme.radius.md,
-    marginBottom: theme.spacing.md,
+    flexDirection: 'row',
     alignItems: 'center',
+    gap: 8,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 10,
+    marginBottom: 16,
+    justifyContent: 'center',
   },
   networkBannerText: {
     color: '#ffffff',
@@ -278,47 +394,44 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: theme.spacing.xl,
+    marginBottom: 20,
   },
   greetingText: {
-    color: theme.colors.textMuted,
     fontSize: 13,
     fontWeight: '600',
   },
   userName: {
-    color: theme.colors.text,
     fontSize: 22,
     fontWeight: '800',
   },
   badgeBtn: {
-    backgroundColor: theme.colors.surfaceSubtle,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
     paddingHorizontal: 14,
     paddingVertical: 8,
-    borderRadius: theme.radius.full,
+    borderRadius: 9999,
     borderWidth: 1,
-    borderColor: theme.colors.surfaceBorder,
   },
   badgeBtnText: {
-    color: theme.colors.text,
     fontSize: 12,
     fontWeight: '700',
   },
   readyBanner: {
-    backgroundColor: theme.colors.secondary,
-    borderRadius: theme.radius.lg,
-    padding: theme.spacing.md,
+    borderRadius: 14,
+    padding: 16,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: theme.spacing.xl,
-    shadowColor: '#f97316',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 4,
+    marginBottom: 20,
   },
   readyBannerContent: {
     flex: 1,
+  },
+  readyTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
   },
   readyBannerTitle: {
     color: '#ffffff',
@@ -332,12 +445,15 @@ const styles = StyleSheet.create({
   },
   readyBannerTag: {
     backgroundColor: '#ffffff',
-    paddingHorizontal: 12,
+    paddingHorizontal: 10,
     paddingVertical: 6,
-    borderRadius: theme.radius.md,
+    borderRadius: 8,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
   },
   readyBannerTagText: {
-    color: theme.colors.secondary,
+    color: '#f97316',
     fontSize: 11,
     fontWeight: '800',
   },
@@ -345,76 +461,66 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: theme.spacing.md,
-    marginTop: theme.spacing.md,
+    marginBottom: 12,
+    marginTop: 12,
   },
   sectionTitle: {
-    color: theme.colors.text,
     fontSize: 15,
     fontWeight: '700',
-    marginBottom: theme.spacing.sm,
+    marginBottom: 8,
+  },
+  seeAllBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 2,
   },
   seeAllText: {
-    color: theme.colors.primary,
     fontSize: 12,
     fontWeight: '700',
   },
   metricsGrid: {
     flexDirection: 'row',
-    gap: theme.spacing.md,
-    marginBottom: theme.spacing.lg,
+    gap: 12,
+    marginBottom: 20,
   },
   metricCard: {
     flex: 1,
-    backgroundColor: theme.colors.surface,
-    borderRadius: theme.radius.lg,
-    padding: theme.spacing.md,
+    borderRadius: 14,
+    padding: 12,
     borderWidth: 1.5,
     alignItems: 'center',
   },
   metricVal: {
-    color: theme.colors.text,
     fontSize: 24,
     fontWeight: '800',
   },
   metricLabel: {
-    color: theme.colors.textMuted,
     fontSize: 11,
     fontWeight: '600',
     marginTop: 4,
     textAlign: 'center',
   },
   emptyCard: {
-    backgroundColor: theme.colors.surface,
-    borderRadius: theme.radius.lg,
-    padding: theme.spacing.xxl,
+    borderRadius: 14,
+    padding: 24,
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: theme.colors.surfaceBorder,
-    marginTop: theme.spacing.sm,
-  },
-  emptyIcon: {
-    fontSize: 36,
-    marginBottom: 8,
+    marginTop: 8,
   },
   emptyTitle: {
-    color: theme.colors.text,
     fontSize: 15,
     fontWeight: '700',
   },
   emptySub: {
-    color: theme.colors.textDim,
     fontSize: 12,
     textAlign: 'center',
     marginTop: 4,
   },
   tableCard: {
-    backgroundColor: theme.colors.surface,
-    borderRadius: theme.radius.lg,
-    padding: theme.spacing.md,
+    borderRadius: 14,
+    padding: 14,
     borderWidth: 1,
-    borderColor: theme.colors.surfaceBorder,
-    marginBottom: theme.spacing.sm,
+    marginBottom: 10,
   },
   tableCardHeader: {
     flexDirection: 'row',
@@ -422,40 +528,30 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   tableNumberBadge: {
-    backgroundColor: theme.colors.primaryLight,
     paddingHorizontal: 10,
     paddingVertical: 4,
-    borderRadius: theme.radius.md,
+    borderRadius: 8,
   },
   tableNumberText: {
-    color: theme.colors.primaryDark,
     fontSize: 13,
     fontWeight: '800',
-  },
-  tableStatusTag: {
-    backgroundColor: theme.colors.surfaceSubtle,
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: theme.radius.sm,
-  },
-  tableStatusText: {
-    color: theme.colors.textMuted,
-    fontSize: 10,
-    fontWeight: '700',
   },
   tableCardBody: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginTop: theme.spacing.md,
+    marginTop: 12,
+  },
+  guestRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
   },
   tableMetaText: {
-    color: theme.colors.textMuted,
     fontSize: 12,
     fontWeight: '600',
   },
   tablePriceText: {
-    color: theme.colors.text,
     fontSize: 16,
     fontWeight: '800',
   },

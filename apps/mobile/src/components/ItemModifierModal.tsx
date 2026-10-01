@@ -1,3 +1,4 @@
+import { Check, Minus, Plus, X } from 'lucide-react-native';
 import React, { useState } from 'react';
 import {
   Modal,
@@ -9,7 +10,9 @@ import {
   TouchableWithoutFeedback,
   View,
 } from 'react-native';
-import { theme } from '../theme';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useAppTheme } from '../context/ThemeContext';
+import { Button } from './common/Button';
 
 export interface ModifierChoice {
   id: string;
@@ -39,10 +42,23 @@ interface ItemModifierModalProps {
   visible: boolean;
   item: MenuItemData | null;
   onClose: () => void;
-  onAddToCart: (item: MenuItemData, quantity: number, selectedModifiers: ModifierChoice[], notes: string) => void;
+  onAddToCart: (
+    item: MenuItemData,
+    quantity: number,
+    selectedModifiers: ModifierChoice[],
+    notes: string,
+  ) => void;
 }
 
-export function ItemModifierModal({ visible, item, onClose, onAddToCart }: ItemModifierModalProps) {
+export function ItemModifierModal({
+  visible,
+  item,
+  onClose,
+  onAddToCart,
+}: ItemModifierModalProps) {
+  const { theme } = useAppTheme();
+  const insets = useSafeAreaInsets();
+
   const [quantity, setQuantity] = useState(1);
   const [selectedModifiers, setSelectedModifiers] = useState<ModifierChoice[]>([]);
   const [notes, setNotes] = useState('');
@@ -85,34 +101,81 @@ export function ItemModifierModal({ visible, item, onClose, onAddToCart }: ItemM
   return (
     <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
       <TouchableWithoutFeedback onPress={onClose}>
-        <View style={styles.backdrop} />
+        <View style={[styles.backdrop, { backgroundColor: theme.colors.overlay }]} />
       </TouchableWithoutFeedback>
 
-      <View style={styles.sheetContainer}>
-        <View style={styles.dragHandle} />
+      <View
+        style={[
+          styles.sheetContainer,
+          {
+            backgroundColor: theme.colors.surface,
+            borderColor: theme.colors.surfaceBorder,
+            paddingBottom: insets.bottom + 16,
+          },
+        ]}
+      >
+        <View style={[styles.dragHandle, { backgroundColor: theme.colors.surfaceBorder }]} />
 
-        <ScrollView contentContainerStyle={styles.scrollContent}>
+        <ScrollView contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps="handled">
           {/* Header */}
-          <View style={styles.header}>
+          <View style={[styles.header, { borderColor: theme.colors.surfaceBorder }]}>
             <View style={{ flex: 1 }}>
               <View style={styles.titleRow}>
-                <View style={[styles.dietBadge, { borderColor: item.isVeg ? theme.colors.veg : theme.colors.nonVeg }]}>
-                  <View style={[styles.dietDot, { backgroundColor: item.isVeg ? theme.colors.veg : theme.colors.nonVeg }]} />
+                <View
+                  style={[
+                    styles.dietBadge,
+                    { borderColor: item.isVeg ? theme.colors.veg : theme.colors.nonVeg },
+                  ]}
+                >
+                  <View
+                    style={[
+                      styles.dietDot,
+                      { backgroundColor: item.isVeg ? theme.colors.veg : theme.colors.nonVeg },
+                    ]}
+                  />
                 </View>
-                <Text style={styles.itemName}>{item.name}</Text>
+                <Text style={[styles.itemName, { color: theme.colors.textPrimary }]}>
+                  {item.name}
+                </Text>
               </View>
-              {item.description ? <Text style={styles.itemDesc}>{item.description}</Text> : null}
+              {item.description ? (
+                <Text style={[styles.itemDesc, { color: theme.colors.textMuted }]}>
+                  {item.description}
+                </Text>
+              ) : null}
             </View>
-            <Text style={styles.basePrice}>₹{item.price}</Text>
+
+            <TouchableOpacity onPress={onClose} style={styles.closeBtn}>
+              <X size={20} color={theme.colors.textMuted} />
+            </TouchableOpacity>
           </View>
 
           {/* Modifier Groups */}
           {item.modifierGroups && item.modifierGroups.length > 0 ? (
             item.modifierGroups.map((group) => (
-              <View key={group.id} style={styles.groupCard}>
+              <View
+                key={group.id}
+                style={[
+                  styles.groupCard,
+                  {
+                    backgroundColor: theme.colors.surfaceSubtle,
+                    borderColor: theme.colors.surfaceBorder,
+                  },
+                ]}
+              >
                 <View style={styles.groupHeader}>
-                  <Text style={styles.groupTitle}>{group.name}</Text>
-                  {group.required ? <Text style={styles.requiredTag}>REQUIRED</Text> : <Text style={styles.optionalTag}>OPTIONAL</Text>}
+                  <Text style={[styles.groupTitle, { color: theme.colors.textPrimary }]}>
+                    {group.name}
+                  </Text>
+                  {group.required ? (
+                    <Text style={[styles.requiredTag, { color: theme.colors.danger }]}>
+                      REQUIRED
+                    </Text>
+                  ) : (
+                    <Text style={[styles.optionalTag, { color: theme.colors.textMuted }]}>
+                      OPTIONAL
+                    </Text>
+                  )}
                 </View>
 
                 {group.options.map((choice) => {
@@ -120,34 +183,80 @@ export function ItemModifierModal({ visible, item, onClose, onAddToCart }: ItemM
                   return (
                     <TouchableOpacity
                       key={choice.id}
-                      style={[styles.choiceRow, isSelected && styles.choiceRowSelected]}
+                      style={[
+                        styles.choiceRow,
+                        isSelected && { backgroundColor: theme.colors.surface },
+                      ]}
                       onPress={() => toggleModifier(group, choice)}
                       activeOpacity={0.7}
                     >
-                      <View style={styles.radioBox}>
-                        <View style={[styles.radioDot, isSelected && styles.radioDotActive]} />
+                      <View
+                        style={[
+                          styles.radioBox,
+                          {
+                            borderColor: isSelected
+                              ? theme.colors.primary
+                              : theme.colors.surfaceBorder,
+                          },
+                        ]}
+                      >
+                        {isSelected && <Check size={12} color={theme.colors.primary} />}
                       </View>
-                      <Text style={[styles.choiceName, isSelected && styles.choiceNameSelected]}>{choice.name}</Text>
-                      {choice.price > 0 && <Text style={styles.choicePrice}>+₹{choice.price}</Text>}
+                      <Text
+                        style={[
+                          styles.choiceName,
+                          {
+                            color: isSelected
+                              ? theme.colors.textPrimary
+                              : theme.colors.textMuted,
+                            fontWeight: isSelected ? '700' : '500',
+                          },
+                        ]}
+                      >
+                        {choice.name}
+                      </Text>
+                      {choice.price > 0 && (
+                        <Text style={[styles.choicePrice, { color: theme.colors.primary }]}>
+                          +₹{choice.price}
+                        </Text>
+                      )}
                     </TouchableOpacity>
                   );
                 })}
               </View>
             ))
           ) : (
-            <View style={styles.defaultCustomization}>
-              <Text style={styles.groupTitle}>Customization</Text>
-              <Text style={styles.itemDesc}>No specific modifier options configured for this item.</Text>
+            <View
+              style={[
+                styles.defaultCustomization,
+                { backgroundColor: theme.colors.surfaceSubtle },
+              ]}
+            >
+              <Text style={[styles.groupTitle, { color: theme.colors.textPrimary }]}>
+                Item Specifications
+              </Text>
+              <Text style={[styles.itemDesc, { color: theme.colors.textMuted }]}>
+                Base price: ₹{item.price}. Standard preparation rules apply.
+              </Text>
             </View>
           )}
 
           {/* Special Instructions Input */}
           <View style={styles.notesGroup}>
-            <Text style={styles.groupTitle}>Special Instructions / Notes</Text>
+            <Text style={[styles.groupTitle, { color: theme.colors.textPrimary }]}>
+              Special Instructions / Kitchen Notes
+            </Text>
             <TextInput
-              style={styles.notesInput}
-              placeholder="e.g. Less spicy, no onions, extra crispy..."
-              placeholderTextColor={theme.colors.textDim}
+              style={[
+                styles.notesInput,
+                {
+                  backgroundColor: theme.colors.surfaceSubtle,
+                  borderColor: theme.colors.surfaceBorder,
+                  color: theme.colors.textPrimary,
+                },
+              ]}
+              placeholder="e.g. Less spicy, extra sauce on side..."
+              placeholderTextColor={theme.colors.textMuted}
               value={notes}
               onChangeText={setNotes}
               multiline
@@ -157,31 +266,42 @@ export function ItemModifierModal({ visible, item, onClose, onAddToCart }: ItemM
 
           {/* Quantity Stepper */}
           <View style={styles.quantityRow}>
-            <Text style={styles.groupTitle}>Quantity</Text>
-            <View style={styles.stepperContainer}>
+            <Text style={[styles.groupTitle, { color: theme.colors.textPrimary }]}>
+              Quantity
+            </Text>
+            <View
+              style={[
+                styles.stepperContainer,
+                {
+                  backgroundColor: theme.colors.surfaceSubtle,
+                  borderColor: theme.colors.surfaceBorder,
+                },
+              ]}
+            >
               <TouchableOpacity
-                style={styles.stepBtn}
+                style={[styles.stepBtn, { backgroundColor: theme.colors.surface }]}
                 onPress={() => setQuantity(Math.max(1, quantity - 1))}
               >
-                <Text style={styles.stepBtnText}>−</Text>
+                <Minus size={16} color={theme.colors.textPrimary} />
               </TouchableOpacity>
-              <Text style={styles.quantityVal}>{quantity}</Text>
+              <Text style={[styles.quantityVal, { color: theme.colors.textPrimary }]}>
+                {quantity}
+              </Text>
               <TouchableOpacity
-                style={styles.stepBtn}
+                style={[styles.stepBtn, { backgroundColor: theme.colors.surface }]}
                 onPress={() => setQuantity(quantity + 1)}
               >
-                <Text style={styles.stepBtnText}>+</Text>
+                <Plus size={16} color={theme.colors.textPrimary} />
               </TouchableOpacity>
             </View>
           </View>
         </ScrollView>
 
         {/* Footer CTA */}
-        <View style={styles.footer}>
-          <TouchableOpacity style={styles.addBtn} onPress={handleAdd} activeOpacity={0.8}>
-            <Text style={styles.addBtnText}>Add Item</Text>
-            <Text style={styles.addBtnPrice}>₹{grandTotal}</Text>
-          </TouchableOpacity>
+        <View style={[styles.footer, { borderColor: theme.colors.surfaceBorder }]}>
+          <Button variant="primary" size="lg" fullWidth onPress={handleAdd}>
+            Add Item to Order • ₹{grandTotal}
+          </Button>
         </View>
       </View>
     </Modal>
@@ -191,38 +311,33 @@ export function ItemModifierModal({ visible, item, onClose, onAddToCart }: ItemM
 const styles = StyleSheet.create({
   backdrop: {
     flex: 1,
-    backgroundColor: theme.colors.overlay,
   },
   sheetContainer: {
-    backgroundColor: theme.colors.surface,
-    borderTopLeftRadius: theme.radius.xl,
-    borderTopRightRadius: theme.radius.xl,
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
     maxHeight: '85%',
     borderTopWidth: 1,
     borderLeftWidth: 1,
     borderRightWidth: 1,
-    borderColor: theme.colors.surfaceBorder,
   },
   dragHandle: {
     width: 40,
     height: 4,
-    backgroundColor: theme.colors.surfaceBorder,
     borderRadius: 2,
     alignSelf: 'center',
     marginTop: 10,
     marginBottom: 6,
   },
   scrollContent: {
-    padding: theme.spacing.lg,
+    padding: 16,
   },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'flex-start',
-    marginBottom: theme.spacing.lg,
-    paddingBottom: theme.spacing.md,
+    marginBottom: 16,
+    paddingBottom: 12,
     borderBottomWidth: 1,
-    borderBottomColor: theme.colors.surfaceBorder,
   },
   titleRow: {
     flexDirection: 'row',
@@ -243,52 +358,42 @@ const styles = StyleSheet.create({
     borderRadius: 3,
   },
   itemName: {
-    color: theme.colors.text,
     fontSize: 18,
     fontWeight: '800',
   },
   itemDesc: {
-    color: theme.colors.textMuted,
     fontSize: 12,
     marginTop: 4,
   },
-  basePrice: {
-    color: theme.colors.primary,
-    fontSize: 18,
-    fontWeight: '800',
+  closeBtn: {
+    padding: 4,
   },
   groupCard: {
-    backgroundColor: theme.colors.surfaceSubtle,
-    borderRadius: theme.radius.lg,
-    padding: theme.spacing.md,
-    marginBottom: theme.spacing.md,
+    borderRadius: 14,
+    padding: 12,
+    marginBottom: 12,
     borderWidth: 1,
-    borderColor: theme.colors.surfaceBorder,
   },
   defaultCustomization: {
-    backgroundColor: theme.colors.surfaceSubtle,
-    borderRadius: theme.radius.lg,
-    padding: theme.spacing.md,
-    marginBottom: theme.spacing.md,
+    borderRadius: 14,
+    padding: 12,
+    marginBottom: 12,
   },
   groupHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: theme.spacing.sm,
+    marginBottom: 8,
   },
   groupTitle: {
-    color: theme.colors.text,
     fontSize: 14,
     fontWeight: '700',
   },
   requiredTag: {
-    color: theme.colors.danger,
     fontSize: 10,
     fontWeight: '800',
   },
   optionalTag: {
-    color: theme.colors.textDim,
     fontSize: 10,
     fontWeight: '700',
   },
@@ -297,58 +402,35 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: 10,
     paddingHorizontal: 8,
-    borderRadius: theme.radius.md,
+    borderRadius: 8,
     marginTop: 4,
-  },
-  choiceRowSelected: {
-    backgroundColor: theme.colors.surface,
   },
   radioBox: {
     width: 18,
     height: 18,
     borderRadius: 9,
-    borderWidth: 2,
-    borderColor: theme.colors.surfaceBorder,
+    borderWidth: 1.5,
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: 10,
   },
-  radioDot: {
-    width: 10,
-    height: 10,
-    borderRadius: 5,
-    backgroundColor: 'transparent',
-  },
-  radioDotActive: {
-    backgroundColor: theme.colors.primary,
-  },
   choiceName: {
     flex: 1,
-    color: theme.colors.textMuted,
     fontSize: 13,
-    fontWeight: '600',
-  },
-  choiceNameSelected: {
-    color: theme.colors.text,
-    fontWeight: '700',
   },
   choicePrice: {
-    color: theme.colors.primary,
     fontSize: 12,
     fontWeight: '700',
   },
   notesGroup: {
-    marginBottom: theme.spacing.lg,
+    marginBottom: 16,
   },
   notesInput: {
-    backgroundColor: theme.colors.surfaceSubtle,
-    borderRadius: theme.radius.md,
+    borderRadius: 10,
     borderWidth: 1,
-    borderColor: theme.colors.surfaceBorder,
-    color: theme.colors.text,
     fontSize: 13,
-    padding: theme.spacing.md,
-    marginTop: theme.spacing.xs,
+    padding: 12,
+    marginTop: 6,
     minHeight: 60,
     textAlignVertical: 'top',
   },
@@ -356,59 +438,30 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: theme.spacing.lg,
+    marginBottom: 16,
   },
   stepperContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: theme.colors.surfaceSubtle,
-    borderRadius: theme.radius.lg,
+    borderRadius: 12,
     borderWidth: 1,
-    borderColor: theme.colors.surfaceBorder,
     padding: 4,
   },
   stepBtn: {
     width: 38,
     height: 38,
-    borderRadius: theme.radius.md,
-    backgroundColor: theme.colors.surface,
+    borderRadius: 8,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  stepBtnText: {
-    color: theme.colors.text,
-    fontSize: 20,
-    fontWeight: '700',
-  },
   quantityVal: {
-    color: theme.colors.text,
     fontSize: 16,
     fontWeight: '800',
     paddingHorizontal: 16,
   },
   footer: {
-    padding: theme.spacing.lg,
+    paddingHorizontal: 16,
+    paddingTop: 12,
     borderTopWidth: 1,
-    borderTopColor: theme.colors.surfaceBorder,
-    backgroundColor: theme.colors.surface,
-  },
-  addBtn: {
-    backgroundColor: theme.colors.primary,
-    borderRadius: theme.radius.lg,
-    paddingVertical: 14,
-    paddingHorizontal: 20,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  addBtnText: {
-    color: '#ffffff',
-    fontSize: 15,
-    fontWeight: '800',
-  },
-  addBtnPrice: {
-    color: '#ffffff',
-    fontSize: 15,
-    fontWeight: '800',
   },
 });
