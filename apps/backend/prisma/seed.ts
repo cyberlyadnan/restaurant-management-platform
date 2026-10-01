@@ -92,35 +92,54 @@ async function main() {
   }
 
   console.log(
-    'Creating demo owner user (login: owner@demo.local / password: Password123!)...',
+    'Creating demo staff users (owner, waiter, chef, kitchen, cashier with Password123!)...',
   );
   const passwordHash = await bcrypt.hash('Password123!', 12);
   const pinHash = await bcrypt.hash('1234', 12);
-  const ownerRoleId = roleByName.get('OWNER')!;
 
-  const owner = await prisma.user.upsert({
-    where: {
-      restaurantId_email: {
-        restaurantId: restaurant.id,
-        email: 'owner@demo.local',
+  const demoStaffSpecs = [
+    { email: 'owner@demo.local', name: 'Demo Owner', role: 'OWNER' },
+    { email: 'waiter@demo.local', name: 'Demo Waiter', role: 'WAITER' },
+    { email: 'chef@demo.local', name: 'Demo Chef', role: 'CHEF' },
+    { email: 'kitchen@demo.local', name: 'Demo Kitchen Staff', role: 'KITCHEN_STAFF' },
+    { email: 'cashier@demo.local', name: 'Demo Cashier', role: 'CASHIER' },
+  ];
+
+  let owner: any = null;
+
+  for (const spec of demoStaffSpecs) {
+    const roleId = roleByName.get(spec.role)!;
+    const user = await prisma.user.upsert({
+      where: {
+        restaurantId_email: {
+          restaurantId: restaurant.id,
+          email: spec.email,
+        },
       },
-    },
-    update: {},
-    create: {
-      restaurantId: restaurant.id,
-      roleId: ownerRoleId,
-      name: 'Demo Owner',
-      email: 'owner@demo.local',
-      passwordHash,
-      pinHash,
-    },
-  });
+      update: {
+        passwordHash,
+        pinHash,
+      },
+      create: {
+        restaurantId: restaurant.id,
+        roleId,
+        name: spec.name,
+        email: spec.email,
+        passwordHash,
+        pinHash,
+      },
+    });
 
-  await prisma.userBranch.upsert({
-    where: { userId_branchId: { userId: owner.id, branchId: branch.id } },
-    update: {},
-    create: { userId: owner.id, branchId: branch.id },
-  });
+    await prisma.userBranch.upsert({
+      where: { userId_branchId: { userId: user.id, branchId: branch.id } },
+      update: {},
+      create: { userId: user.id, branchId: branch.id },
+    });
+
+    if (spec.role === 'OWNER') {
+      owner = user;
+    }
+  }
 
   console.log('Seeding floor + tables...');
   const floor = await prisma.floor.upsert({

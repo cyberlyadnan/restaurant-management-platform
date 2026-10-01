@@ -31,8 +31,10 @@ import { useLogin } from "@/hooks/use-auth";
 import { ApiError } from "@/lib/api";
 
 const DEMO_CREDENTIALS = [
-  { label: "Owner / Manager", email: "owner@demo.com", role: "Full Access" },
-  { label: "POS Cashier", email: "cashier@demo.com", role: "Register & Bills" },
+  { label: "Owner / Manager", email: "owner@demo.local", role: "Full Admin Access" },
+  { label: "Waiter Staff", email: "waiter@demo.local", role: "Tables & Menu" },
+  { label: "Chef / Kitchen", email: "chef@demo.local", role: "KDS Queue" },
+  { label: "POS Cashier", email: "cashier@demo.local", role: "Register & Bills" },
 ];
 
 export default function LoginPage() {
@@ -62,7 +64,7 @@ export default function LoginPage() {
 
   const handleDemoFill = (email: string) => {
     setValue("email", email);
-    setValue("password", "password123");
+    setValue("password", "Password123!");
     toast.info(`Filled demo credentials for ${email}`);
   };
 
