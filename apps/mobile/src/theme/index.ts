@@ -1,13 +1,15 @@
-import { darkColors, lightColors, ThemeColors } from './colors';
+import { darkColors, lightColors } from './colors';
 import { radius } from './radius';
 import { shadows } from './shadows';
 import { spacing } from './spacing';
 import { typography } from './typography';
 
+export * from './animations';
 export * from './colors';
 export * from './radius';
 export * from './shadows';
 export * from './spacing';
+export * from './themes';
 export * from './typography';
 
 export const theme = {

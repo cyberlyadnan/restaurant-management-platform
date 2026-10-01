@@ -1,15 +1,17 @@
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import { BookOpen, Home, Package, User, UtensilsCrossed } from 'lucide-react-native';
+import { BarChart3, BookOpen, Home, Package, User, UtensilsCrossed } from 'lucide-react-native';
 import React from 'react';
 import { ActivityIndicator, StyleSheet, View } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { FloatingTabBar } from '../components/common/FloatingTabBar';
 import { useAuth } from '../context/AuthContext';
 import { ThemeProvider, useAppTheme } from '../context/ThemeContext';
-import { ManagerRestrictedScreen } from '../screens/common/ManagerRestrictedScreen';
 import { KitchenHomeScreen } from '../screens/kitchen/KitchenHomeScreen';
 import { LoginScreen } from '../screens/LoginScreen';
+import { OwnerHomeScreen } from '../screens/owner/OwnerHomeScreen';
+import { OwnerReportsScreen } from '../screens/owner/OwnerReportsScreen';
 import { WaiterCartScreen } from '../screens/waiter/WaiterCartScreen';
 import { WaiterHomeScreen } from '../screens/waiter/WaiterHomeScreen';
 import { WaiterMenuScreen } from '../screens/waiter/WaiterMenuScreen';
@@ -22,25 +24,11 @@ const Tab = createBottomTabNavigator();
 const Stack = createNativeStackNavigator();
 
 function WaiterTabs() {
-  const { theme } = useAppTheme();
-
   return (
     <Tab.Navigator
+      tabBar={(props) => <FloatingTabBar {...props} />}
       screenOptions={{
         headerShown: false,
-        tabBarStyle: {
-          backgroundColor: theme.colors.surface,
-          borderTopColor: theme.colors.surfaceBorder,
-          height: 60,
-          paddingBottom: 8,
-          paddingTop: 8,
-        },
-        tabBarActiveTintColor: theme.colors.primary,
-        tabBarInactiveTintColor: theme.colors.textMuted,
-        tabBarLabelStyle: {
-          fontSize: 11,
-          fontWeight: '700',
-        },
       }}
     >
       <Tab.Screen
@@ -63,7 +51,7 @@ function WaiterTabs() {
         name="Menu"
         component={WaiterMenuScreen}
         options={{
-          tabBarLabel: 'Menu',
+          tabBarLabel: 'New Order',
           tabBarIcon: ({ color, size }) => <BookOpen size={size || 20} color={color} />,
         }}
       />
@@ -87,8 +75,60 @@ function WaiterTabs() {
   );
 }
 
+function OwnerTabs() {
+  return (
+    <Tab.Navigator
+      tabBar={(props) => <FloatingTabBar {...props} />}
+      screenOptions={{
+        headerShown: false,
+      }}
+    >
+      <Tab.Screen
+        name="Home"
+        component={OwnerHomeScreen}
+        options={{
+          tabBarLabel: 'Dashboard',
+          tabBarIcon: ({ color, size }) => <Home size={size || 20} color={color} />,
+        }}
+      />
+      <Tab.Screen
+        name="Tables"
+        component={WaiterTablesScreen}
+        options={{
+          tabBarLabel: 'Tables',
+          tabBarIcon: ({ color, size }) => <UtensilsCrossed size={size || 20} color={color} />,
+        }}
+      />
+      <Tab.Screen
+        name="Orders"
+        component={WaiterOrdersScreen}
+        options={{
+          tabBarLabel: 'Orders',
+          tabBarIcon: ({ color, size }) => <Package size={size || 20} color={color} />,
+        }}
+      />
+      <Tab.Screen
+        name="Reports"
+        component={OwnerReportsScreen}
+        options={{
+          tabBarLabel: 'Reports',
+          tabBarIcon: ({ color, size }) => <BarChart3 size={size || 20} color={color} />,
+        }}
+      />
+      <Tab.Screen
+        name="Profile"
+        component={WaiterProfileScreen}
+        options={{
+          tabBarLabel: 'Profile',
+          tabBarIcon: ({ color, size }) => <User size={size || 20} color={color} />,
+        }}
+      />
+    </Tab.Navigator>
+  );
+}
+
 function NavigationRoot() {
-  const { user, isLoading, isKitchen } = useAuth();
+  const { user, isLoading, isKitchen, isOwnerOrManager } = useAuth();
   const { theme } = useAppTheme();
 
   if (isLoading) {
@@ -106,12 +146,18 @@ function NavigationRoot() {
           <Stack.Screen name="Login" component={LoginScreen} />
         ) : isKitchen ? (
           <Stack.Screen name="KitchenMain" component={KitchenHomeScreen} />
+        ) : isOwnerOrManager ? (
+          <>
+            <Stack.Screen name="OwnerMain" component={OwnerTabs} />
+            <Stack.Screen name="Menu" component={WaiterMenuScreen} />
+            <Stack.Screen name="Cart" component={WaiterCartScreen} />
+            <Stack.Screen name="Notifications" component={WaiterNotificationsScreen} />
+          </>
         ) : (
           <>
             <Stack.Screen name="WaiterMain" component={WaiterTabs} />
             <Stack.Screen name="Cart" component={WaiterCartScreen} />
             <Stack.Screen name="Notifications" component={WaiterNotificationsScreen} />
-            <Stack.Screen name="ManagerNotice" component={ManagerRestrictedScreen} />
           </>
         )}
       </Stack.Navigator>

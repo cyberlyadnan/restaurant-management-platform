@@ -261,10 +261,10 @@ The following features have database models or partial backend endpoints in plac
 │                           │                                   │ • Staff performance & tips report │
 │                           │                                   │ • Multi-branch comparative charts │
 ├───────────────────────────┼───────────────────────────────────┼───────────────────────────────────┤
-│ Waiter & Kitchen Mobile App │ • Production React Native app     │ • Global Light, Dark & System theme│
-│                           │ • Waiter Home, Tables, Menu, Cart │   system (ThemeContext + tokens)  │
-│                           │ • Item Modifier Bottom Sheet      │ • Lucide icons & 48px+ touch UI   │
-│                           │ • KDS Queue & Ticket Cards        │ • Safe area & Keyboard handling   │
+│ Waiter, Kitchen & Owner Mobile App│ • Production React Native app     │ • Owner Command Center Dashboard  │
+│                           │ • Waiter Home, Tables, Menu, Cart │   (Revenue, Sparklines, Filters)  │
+│                           │ • Item Modifier Bottom Sheet      │ • Executive Reports & Analytics   │
+│                           │ • KDS Queue & Ticket Cards        │ • Floating Tab Bar & Android Back │
 ├───────────────────────────┼───────────────────────────────────┼───────────────────────────────────┤
 │ Menu Availability & Prep  │ • `prepTimeMinutes` field         │ • KDS prep timer warning based    │
 │ Time                      │ • `availableFrom` & `availableTo` │   on item prep time               │
