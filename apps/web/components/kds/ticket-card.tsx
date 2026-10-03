@@ -35,25 +35,25 @@ const STATUS_BUTTON: Record<
     label: "Accept Ticket",
     icon: CheckCircle2,
     colorClass:
-      "bg-emerald-600 hover:bg-emerald-700 text-white font-bold shadow-xs",
+      "bg-indigo-600 hover:bg-indigo-500 text-white font-bold shadow-xs",
   },
   ACCEPTED: {
     label: "Start Cooking",
     icon: Flame,
     colorClass:
-      "bg-amber-600 hover:bg-amber-700 text-white font-bold shadow-xs",
+      "bg-amber-600 hover:bg-amber-500 text-white font-bold shadow-xs",
   },
   PREPARING: {
     label: "Mark Ready",
     icon: CheckCircle2,
     colorClass:
-      "bg-emerald-600 hover:bg-emerald-700 text-white font-bold shadow-xs",
+      "bg-violet-600 hover:bg-violet-500 text-white font-bold shadow-xs",
   },
   READY: {
     label: "Bump / Served",
     icon: ChefHat,
     colorClass:
-      "bg-primary hover:bg-primary/90 text-primary-foreground font-bold shadow-xs",
+      "bg-emerald-600 hover:bg-emerald-500 text-white font-bold shadow-xs",
   },
 };
 
@@ -93,70 +93,61 @@ export function TicketCard({
   };
   const BtnIcon = btnConfig.icon;
 
+  const ticketTitle = ticket.ticketNumber || ticket.order.orderNumber;
+  const isDineIn = Boolean(ticket.order.table);
+  const locationLabel = isDineIn
+    ? `Table ${ticket.order.table?.number}`
+    : ticket.order.type || "TAKEAWAY";
+
   return (
     <Card
       className={cn(
-        "group relative flex shrink-0 flex-col justify-between rounded-2xl border-2 p-4 shadow-sm transition-all duration-200 overflow-hidden bg-card",
+        "group relative flex shrink-0 flex-col justify-between rounded-2xl border p-3.5 shadow-sm transition-all duration-200 overflow-hidden bg-card/95 backdrop-blur-xs select-none",
         ticket.isPriority
-          ? "border-rose-500 ring-2 ring-rose-500/30 bg-rose-500/5 shadow-md"
+          ? "border-rose-500/80 ring-2 ring-rose-500/30 bg-rose-500/5 shadow-md"
           : isUrgent
-            ? "border-destructive ring-2 ring-destructive/30 bg-destructive/5 animate-pulse"
+            ? "border-rose-500 ring-2 ring-rose-500/30 bg-rose-500/5 animate-pulse"
             : isWarning
               ? "border-amber-500/60 bg-amber-500/5"
-              : "border-border/80 hover:border-border",
+              : "border-border/70 hover:border-border/90",
       )}
     >
       {/* Priority Banner when starred */}
       {ticket.isPriority && (
-        <div className="absolute top-0 left-0 right-0 bg-gradient-to-r from-rose-600 via-amber-600 to-rose-600 text-white text-[11px] font-extrabold uppercase tracking-wider py-0.5 px-3 flex items-center justify-center gap-1.5 shadow-xs">
+        <div className="absolute top-0 left-0 right-0 bg-gradient-to-r from-rose-600 via-amber-600 to-rose-600 text-white text-[10px] font-extrabold uppercase tracking-wider py-0.5 px-3 flex items-center justify-center gap-1.5 shadow-2xs">
           <Star className="h-3 w-3 fill-white" />
-          Rush Order / High Priority
+          Rush Priority Order
         </div>
       )}
 
-      {/* Ticket Header */}
-      <div className={cn("flex flex-col gap-2.5", ticket.isPriority && "pt-4")}>
-        <div className="flex items-start justify-between gap-2">
-          <div className="flex flex-col">
-            <div className="flex items-center gap-2">
-              <span className="text-base font-extrabold tracking-tight text-foreground font-mono">
-                #{ticket.ticketNumber || ticket.order.orderNumber}
+      {/* Ticket Header Container */}
+      <div className={cn("flex flex-col gap-2", ticket.isPriority && "pt-3")}>
+        {/* Header Top Meta Row: Station Badge + Order Type + Elapsed Timer */}
+        <div className="flex items-center justify-between gap-1.5 min-w-0">
+          <div className="flex items-center gap-1.5 flex-wrap min-w-0">
+            {/* Station Tag */}
+            {ticket.station && (
+              <span className="inline-flex items-center rounded-md bg-indigo-500/10 border border-indigo-500/20 px-2 py-0.5 text-[10px] font-extrabold uppercase tracking-wide text-indigo-400 shrink-0">
+                {ticket.station.name}
               </span>
-              {ticket.station && (
-                <Badge
-                  variant="secondary"
-                  className="text-[10px] font-semibold uppercase px-1.5 py-0 bg-secondary/80 border border-border"
-                >
-                  {ticket.station.name}
-                </Badge>
-              )}
-            </div>
-
-            <div className="flex items-center gap-1.5 text-xs text-muted-foreground mt-0.5">
-              <span className="font-semibold text-foreground">
-                {ticket.order.table ? `Table ${ticket.order.table.number}` : ticket.order.type}
-              </span>
-              <span>•</span>
-              <span className="text-[11px]">
-                {new Date(ticket.createdAt).toLocaleTimeString([], {
-                  hour: "2-digit",
-                  minute: "2-digit",
-                })}
-              </span>
-            </div>
+            )}
+            {/* Order Type / Table */}
+            <span className="inline-flex items-center rounded-md bg-secondary border border-border/60 px-2 py-0.5 text-[10px] font-bold text-foreground shrink-0">
+              {locationLabel}
+            </span>
           </div>
 
           {/* Time Elapsed Timer Badge */}
           <div
             className={cn(
-              "flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-bold tabular-nums border shadow-2xs",
+              "flex items-center gap-1 shrink-0 rounded-full px-2.5 py-0.5 text-xs font-extrabold tabular-nums border shadow-2xs",
               isUrgent
-                ? "bg-destructive text-destructive-foreground border-destructive animate-bounce"
+                ? "bg-rose-600 text-white border-rose-600 animate-bounce"
                 : isWarning
-                  ? "bg-amber-500/20 text-amber-700 dark:text-amber-400 border-amber-500/40"
+                  ? "bg-amber-500/20 text-amber-400 border-amber-500/40"
                   : elapsed < 5
-                    ? "bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 border-emerald-500/30"
-                    : "bg-secondary text-foreground border-border",
+                    ? "bg-emerald-500/15 text-emerald-400 border-emerald-500/30"
+                    : "bg-secondary text-foreground border-border/80",
             )}
           >
             <Timer className="h-3 w-3" />
@@ -164,26 +155,44 @@ export function TicketCard({
           </div>
         </div>
 
-        {/* Food Items List with Big Bold Quantities for 5ft Kitchen Viewing */}
-        <div className="flex flex-col divide-y divide-border/60 border-y border-border/80 py-2 my-1">
+        {/* Header Main Row: Ticket Number & Order Time */}
+        <div className="flex items-baseline justify-between gap-2 border-b border-border/50 pb-2 min-w-0">
+          <div className="min-w-0 flex-1">
+            <h3
+              title={`#${ticketTitle}`}
+              className="text-base font-extrabold tracking-tight font-mono text-foreground truncate whitespace-nowrap leading-none"
+            >
+              #{ticketTitle}
+            </h3>
+          </div>
+          <span className="text-[11px] font-medium text-muted-foreground shrink-0 font-mono">
+            {new Date(ticket.createdAt).toLocaleTimeString([], {
+              hour: "2-digit",
+              minute: "2-digit",
+            })}
+          </span>
+        </div>
+
+        {/* Food Items List with Compact Bold Quantities */}
+        <div className="flex flex-col divide-y divide-border/40 py-1 my-0.5">
           {ticket.items.map((item) => (
-            <div key={item.id} className="flex flex-col gap-1 py-2 first:pt-1 last:pb-1">
-              <div className="flex items-baseline gap-2.5">
-                <span className="flex h-6 min-w-6 items-center justify-center rounded-lg bg-foreground text-background font-extrabold text-sm px-1.5 shadow-2xs tabular-nums">
+            <div key={item.id} className="flex flex-col gap-1 py-1.5 first:pt-0.5 last:pb-0.5">
+              <div className="flex items-start gap-2">
+                <span className="flex h-5.5 min-w-[24px] items-center justify-center rounded-md bg-foreground text-background font-black text-xs px-1 shadow-2xs tabular-nums shrink-0 mt-0.5">
                   {item.orderItem.quantity}×
                 </span>
-                <span className="text-[15px] font-bold tracking-tight text-foreground leading-snug">
+                <span className="text-sm font-bold tracking-tight text-foreground leading-snug break-words flex-1">
                   {item.orderItem.nameSnapshot}
                 </span>
               </div>
 
-              {/* Modifiers Pill Badges */}
+              {/* Modifiers Badges */}
               {item.orderItem.modifiers && item.orderItem.modifiers.length > 0 && (
-                <div className="flex flex-wrap gap-1 pl-8">
+                <div className="flex flex-wrap gap-1 pl-7">
                   {item.orderItem.modifiers.map((m, idx) => (
                     <span
                       key={idx}
-                      className="rounded-md bg-secondary border border-border px-1.5 py-0.5 text-[11px] font-medium text-foreground"
+                      className="rounded-md bg-secondary/80 border border-border/60 px-1.5 py-0.5 text-[10px] font-semibold text-muted-foreground"
                     >
                       +{m.nameSnapshot}
                     </span>
@@ -193,8 +202,8 @@ export function TicketCard({
 
               {/* Kitchen Special Instructions Note */}
               {item.orderItem.kitchenNote && (
-                <div className="flex items-center gap-1.5 rounded-lg bg-amber-500/15 border border-amber-500/30 px-2.5 py-1 text-xs text-amber-800 dark:text-amber-300 font-semibold mt-0.5 ml-8">
-                  <Flame className="h-3.5 w-3.5 shrink-0 text-amber-600" />
+                <div className="flex items-center gap-1.5 rounded-lg bg-amber-500/10 border border-amber-500/25 px-2 py-1 text-[11px] text-amber-400 font-semibold mt-0.5 ml-7">
+                  <Flame className="h-3 w-3 shrink-0 text-amber-400" />
                   <span>Note: {item.orderItem.kitchenNote}</span>
                 </div>
               )}
@@ -203,16 +212,16 @@ export function TicketCard({
         </div>
       </div>
 
-      {/* Large Touch-Friendly Actions for Kitchen Gloves / Tablets */}
-      <div className="mt-3 flex items-center gap-2 pt-2">
+      {/* Large Touch-Friendly Actions for Kitchen Gloves / Kiosk */}
+      <div className="mt-2.5 flex items-center gap-1.5 pt-2 border-t border-border/50">
         {nextStatus && (
           <Button
             size="default"
-            className={cn("flex-1 h-10 gap-2 text-sm", btnConfig.colorClass)}
+            className={cn("flex-1 h-9 gap-1.5 text-xs font-bold shadow-2xs", btnConfig.colorClass)}
             disabled={updateStatus.isPending}
             onClick={() => updateStatus.mutate({ id: ticket.id, status: nextStatus })}
           >
-            <BtnIcon className="h-4 w-4" />
+            <BtnIcon className="h-3.5 w-3.5" />
             {updateStatus.isPending ? "Updating…" : btnConfig.label}
           </Button>
         )}
@@ -222,8 +231,8 @@ export function TicketCard({
           variant="outline"
           size="icon"
           className={cn(
-            "h-10 w-10 shrink-0 border-border shadow-xs",
-            ticket.isPriority && "bg-rose-500/15 border-rose-500/40 text-rose-600",
+            "h-9 w-9 shrink-0 border-border/80 shadow-2xs hover:bg-secondary",
+            ticket.isPriority && "bg-rose-500/15 border-rose-500/40 text-rose-500",
           )}
           title={ticket.isPriority ? "Remove rush priority" : "Mark as rush priority"}
           disabled={setPriority.isPending}
@@ -233,7 +242,7 @@ export function TicketCard({
         >
           <Star
             className={cn(
-              "h-4 w-4",
+              "h-3.5 w-3.5",
               ticket.isPriority ? "fill-rose-500 text-rose-500" : "text-muted-foreground",
             )}
           />
@@ -243,7 +252,7 @@ export function TicketCard({
         <Button
           variant="outline"
           size="icon"
-          className="h-10 w-10 shrink-0 border-border text-muted-foreground hover:text-foreground shadow-xs"
+          className="h-9 w-9 shrink-0 border-border/80 text-muted-foreground hover:text-foreground shadow-2xs hover:bg-secondary"
           title="Reprint physical KOT ticket"
           disabled={reprint.isPending}
           onClick={() =>
@@ -252,7 +261,7 @@ export function TicketCard({
             })
           }
         >
-          <Printer className="h-4 w-4" />
+          <Printer className="h-3.5 w-3.5" />
         </Button>
       </div>
     </Card>
