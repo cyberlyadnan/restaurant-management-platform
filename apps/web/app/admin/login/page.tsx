@@ -49,7 +49,7 @@ export default function PlatformLoginPage() {
   };
 
   const handleFillDemo = () => {
-    setEmail("admin@restro.growthtechnos.com");
+    setEmail("admin@orderrestro.com");
     setPassword("admin123456");
     toast.info("Super Admin demo credentials auto-filled");
   };
