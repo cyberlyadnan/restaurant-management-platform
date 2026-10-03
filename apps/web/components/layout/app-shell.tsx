@@ -26,7 +26,7 @@ export function AppShell({
         <div className="flex h-16 shrink-0 items-center gap-2 px-5">
           <Logo />
           <span className="text-sm font-semibold tracking-tight text-sidebar-foreground">
-            Nodedr OrderRestro
+            RestroPulse
           </span>
         </div>
         <div className="shrink-0 px-3 pb-3">
@@ -47,7 +47,7 @@ export function AppShell({
           <div className="flex h-16 shrink-0 items-center gap-2 px-5">
             <Logo />
             <span className="text-sm font-semibold tracking-tight text-sidebar-foreground">
-              Nodedr OrderRestro
+              RestroPulse
             </span>
           </div>
           <div className="shrink-0 px-3 pb-3">

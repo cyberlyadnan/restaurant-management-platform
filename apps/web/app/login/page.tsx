@@ -84,7 +84,7 @@ export default function LoginPage() {
               <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 shadow-md">
                 <UtensilsCrossed className="h-5 w-5" />
               </div>
-              <span>Nodedr OrderRestro</span>
+              <span>RestroPulse</span>
             </Link>
             <Badge variant="outline" className="border-emerald-500/30 bg-emerald-500/10 text-emerald-400 text-[10px] font-bold px-2 py-0.5 uppercase tracking-wider">
               SaaS Multi-Tenant
@@ -163,7 +163,7 @@ export default function LoginPage() {
             {/* Mobile Header Logo */}
             <div className="flex lg:hidden flex-col items-center text-center space-y-2">
               <Link href="/" className="inline-flex items-center gap-2 text-emerald-400 font-extrabold text-xl">
-                <UtensilsCrossed className="h-6 w-6" /> OrderRestro
+                <UtensilsCrossed className="h-6 w-6" /> RestroPulse
               </Link>
             </div>
 

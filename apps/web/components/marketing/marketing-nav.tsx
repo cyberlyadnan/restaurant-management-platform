@@ -21,7 +21,7 @@ export function MarketingNav() {
         <Link href="/" className="flex items-center gap-2.5">
           <Logo size={30} />
           <span className="text-[15px] font-semibold tracking-tight text-foreground">
-            OrderRestro
+            RestroPulse
           </span>
           <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
             SaaS

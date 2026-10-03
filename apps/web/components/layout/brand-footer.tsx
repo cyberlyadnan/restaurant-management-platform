@@ -18,7 +18,7 @@ export function BrandFooter() {
         rel="noopener noreferrer"
         className="text-center text-[11px] leading-tight text-sidebar-foreground/50 hover:text-sidebar-foreground/80 hover:underline"
       >
-        OrderRestro · made by Nodedr Infotech Private Limited
+        RestroPulse · Next-Gen Restaurant OS
       </a>
     </div>
   );

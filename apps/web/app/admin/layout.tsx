@@ -86,7 +86,7 @@ export default function PlatformAdminLayout({
           </div>
           <div>
             <div className="text-sm font-bold tracking-tight text-white">
-              OrderRestro
+              RestroPulse
             </div>
             <div className="text-[11px] font-medium text-emerald-400 tracking-wider uppercase">
               Platform Admin

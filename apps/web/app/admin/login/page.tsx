@@ -49,7 +49,7 @@ export default function PlatformLoginPage() {
   };
 
   const handleFillDemo = () => {
-    setEmail("admin@orderrestro.com");
+    setEmail("admin@restro.growthtechnos.com");
     setPassword("admin123456");
     toast.info("Super Admin demo credentials auto-filled");
   };
@@ -87,7 +87,7 @@ export default function PlatformLoginPage() {
               </Badge>
             </div>
             <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-white">
-              OrderRestro Control Center
+              RestroPulse Control Center
             </h1>
             <p className="text-xs sm:text-sm text-slate-400 max-w-xs mx-auto">
               SaaS Infrastructure, Multi-Tenant Provisioning & System Operator Access
