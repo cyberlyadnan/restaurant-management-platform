@@ -23,7 +23,7 @@ export function MarketingNav() {
           <span className="text-[15px] font-semibold tracking-tight text-foreground">
             RestroPulse
           </span>
-          <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+          <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-indigo-500/10 text-indigo-400 border border-indigo-500/20">
             SaaS
           </span>
         </Link>
@@ -48,7 +48,7 @@ export function MarketingNav() {
             Restaurant Login
           </Link>
           <Link href="/register">
-            <Button variant="default" size="default" className="bg-emerald-600 hover:bg-emerald-500 text-white font-semibold shadow-sm">
+            <Button variant="default" size="default" className="bg-indigo-600 hover:bg-indigo-500 text-white font-semibold shadow-sm">
               Start 14-Day Free Trial
             </Button>
           </Link>
@@ -85,7 +85,7 @@ export function MarketingNav() {
                 </Button>
               </Link>
               <Link href="/register">
-                <Button variant="default" className="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-semibold">
+                <Button variant="default" className="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-semibold">
                   Start 14-Day Free Trial
                 </Button>
               </Link>

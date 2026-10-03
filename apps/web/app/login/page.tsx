@@ -80,13 +80,13 @@ export default function LoginPage() {
         <div className="hidden lg:flex flex-1 flex-col justify-between border-r border-slate-800/60 bg-gradient-to-br from-slate-900/80 via-slate-950 to-slate-950 p-12 relative z-10 backdrop-blur-xl">
           {/* Top Brand Logo */}
           <div className="flex items-center gap-3">
-            <Link href="/" className="flex items-center gap-2 text-emerald-400 font-extrabold text-xl tracking-tight">
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 shadow-md">
+            <Link href="/" className="flex items-center gap-2 text-indigo-400 font-extrabold text-xl tracking-tight">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-indigo-500/15 border border-indigo-500/30 text-indigo-400 shadow-md">
                 <UtensilsCrossed className="h-5 w-5" />
               </div>
               <span>RestroPulse</span>
             </Link>
-            <Badge variant="outline" className="border-emerald-500/30 bg-emerald-500/10 text-emerald-400 text-[10px] font-bold px-2 py-0.5 uppercase tracking-wider">
+            <Badge variant="outline" className="border-indigo-500/30 bg-indigo-500/10 text-indigo-400 text-[10px] font-bold px-2 py-0.5 uppercase tracking-wider">
               SaaS Multi-Tenant
             </Badge>
           </div>
@@ -94,8 +94,8 @@ export default function LoginPage() {
           {/* Center Content / Hero Features */}
           <div className="my-auto max-w-lg space-y-8">
             <div className="space-y-3">
-              <Badge variant="outline" className="border-emerald-500/30 bg-emerald-500/10 text-emerald-300 text-xs font-semibold gap-1.5 px-3 py-1">
-                <Sparkles className="h-3.5 w-3.5 text-emerald-400" />
+              <Badge variant="outline" className="border-indigo-500/30 bg-indigo-500/10 text-indigo-300 text-xs font-semibold gap-1.5 px-3 py-1">
+                <Sparkles className="h-3.5 w-3.5 text-indigo-400" />
                 Next-Gen Restaurant Operating System
               </Badge>
               <h2 className="text-3xl sm:text-4xl font-black tracking-tight text-white leading-tight">
@@ -110,7 +110,7 @@ export default function LoginPage() {
             <div className="grid grid-cols-2 gap-3 pt-2">
               <div className="rounded-xl border border-slate-800/80 bg-slate-900/50 p-3.5 space-y-1.5 shadow-2xs backdrop-blur-md">
                 <div className="flex items-center gap-2 text-xs font-bold text-slate-200">
-                  <div className="h-2 w-2 rounded-full bg-emerald-400" />
+                  <div className="h-2 w-2 rounded-full bg-indigo-400" />
                   <span>Cash Drawer & Shifts</span>
                 </div>
                 <p className="text-[11px] text-slate-400">Blind cash drops, floats & automated Z-Reports</p>
@@ -118,7 +118,7 @@ export default function LoginPage() {
 
               <div className="rounded-xl border border-slate-800/80 bg-slate-900/50 p-3.5 space-y-1.5 shadow-2xs backdrop-blur-md">
                 <div className="flex items-center gap-2 text-xs font-bold text-slate-200">
-                  <div className="h-2 w-2 rounded-full bg-teal-400" />
+                  <div className="h-2 w-2 rounded-full bg-violet-400" />
                   <span>Split Bill & Multi-Pay</span>
                 </div>
                 <p className="text-[11px] text-slate-400">Equal diner split, seat tickets & tender attribution</p>
@@ -145,7 +145,7 @@ export default function LoginPage() {
           {/* Bottom Security / Status Footer */}
           <div className="flex items-center justify-between pt-6 border-t border-slate-800/60 text-xs text-slate-500">
             <span className="flex items-center gap-1.5">
-              <ShieldCheck className="h-4 w-4 text-emerald-400" />
+              <ShieldCheck className="h-4 w-4 text-indigo-400" />
               Isolated Multi-Tenant Architecture
             </span>
             <span className="font-mono text-[11px]">v2.5.0 • 99.9% Uptime</span>
@@ -162,7 +162,7 @@ export default function LoginPage() {
           >
             {/* Mobile Header Logo */}
             <div className="flex lg:hidden flex-col items-center text-center space-y-2">
-              <Link href="/" className="inline-flex items-center gap-2 text-emerald-400 font-extrabold text-xl">
+              <Link href="/" className="inline-flex items-center gap-2 text-indigo-400 font-extrabold text-xl">
                 <UtensilsCrossed className="h-6 w-6" /> RestroPulse
               </Link>
             </div>
@@ -188,10 +188,10 @@ export default function LoginPage() {
                     key={demo.email}
                     type="button"
                     onClick={() => handleDemoFill(demo.email)}
-                    className="flex flex-col items-start rounded-lg border border-slate-800 bg-slate-950 p-2 text-left hover:border-emerald-500/50 hover:bg-slate-900 transition-all text-xs"
+                    className="flex flex-col items-start rounded-lg border border-slate-800 bg-slate-950 p-2 text-left hover:border-indigo-500/50 hover:bg-slate-900 transition-all text-xs"
                   >
                     <span className="font-bold text-slate-200">{demo.label}</span>
-                    <span className="text-[10px] text-emerald-400">{demo.role}</span>
+                    <span className="text-[10px] text-indigo-400">{demo.role}</span>
                   </button>
                 ))}
               </div>
@@ -210,7 +210,7 @@ export default function LoginPage() {
                     type="email"
                     autoComplete="email"
                     placeholder="you@restaurant.com"
-                    className="h-11 bg-slate-950 border-slate-800 text-white placeholder:text-slate-600 focus-visible:ring-emerald-500 font-medium"
+                    className="h-11 bg-slate-950 border-slate-800 text-white placeholder:text-slate-600 focus-visible:ring-indigo-500 font-medium"
                     {...register("email")}
                   />
                   {errors.email && (
@@ -231,7 +231,7 @@ export default function LoginPage() {
                       type={showPassword ? "text" : "password"}
                       autoComplete="current-password"
                       placeholder="••••••••"
-                      className="h-11 bg-slate-950 border-slate-800 text-white placeholder:text-slate-600 focus-visible:ring-emerald-500 pr-10 font-medium"
+                      className="h-11 bg-slate-950 border-slate-800 text-white placeholder:text-slate-600 focus-visible:ring-indigo-500 pr-10 font-medium"
                       {...register("password")}
                     />
                     <button
@@ -255,7 +255,7 @@ export default function LoginPage() {
                 {/* Submit Button */}
                 <Button
                   type="submit"
-                  className="w-full h-11 bg-emerald-500 hover:bg-emerald-600 text-slate-950 font-bold text-sm shadow-md transition-all flex items-center justify-center gap-2 mt-2"
+                  className="w-full h-11 bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-sm shadow-md shadow-indigo-500/20 transition-all flex items-center justify-center gap-2 mt-2"
                   disabled={login.isPending}
                 >
                   {login.isPending ? (
@@ -274,7 +274,7 @@ export default function LoginPage() {
             <div className="flex items-center justify-between text-xs text-slate-400 px-1 pt-2">
               <p>
                 New restaurant?{" "}
-                <Link href="/register" className="font-bold text-emerald-400 hover:underline">
+                <Link href="/register" className="font-bold text-indigo-400 hover:underline">
                   Start Free Trial
                 </Link>
               </p>

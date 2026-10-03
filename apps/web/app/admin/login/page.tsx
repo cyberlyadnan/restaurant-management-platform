@@ -58,9 +58,9 @@ export default function PlatformLoginPage() {
     <main className="relative flex min-h-screen w-full flex-col items-center justify-center overflow-hidden bg-slate-950 p-4 sm:p-6 text-slate-100 antialiased">
       {/* Background Cyber Grid & Glow Ambient Lighting */}
       <div className="absolute inset-0 bg-[radial-gradient(#1e293b_1px,transparent_1px)] [background-size:24px_24px] opacity-40 pointer-events-none" />
-      <div className="pointer-events-none absolute -left-40 -top-40 h-96 w-96 rounded-full bg-emerald-500/10 blur-[140px]" />
-      <div className="pointer-events-none absolute -right-40 -bottom-40 h-96 w-96 rounded-full bg-cyan-500/10 blur-[140px]" />
-      <div className="pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 h-[500px] w-[500px] rounded-full bg-emerald-600/5 blur-[160px]" />
+      <div className="pointer-events-none absolute -left-40 -top-40 h-96 w-96 rounded-full bg-indigo-500/10 blur-[140px]" />
+      <div className="pointer-events-none absolute -right-40 -bottom-40 h-96 w-96 rounded-full bg-violet-500/10 blur-[140px]" />
+      <div className="pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 h-[500px] w-[500px] rounded-full bg-indigo-600/5 blur-[160px]" />
 
       <motion.div
         initial={{ opacity: 0, y: 15 }}
@@ -71,18 +71,18 @@ export default function PlatformLoginPage() {
         {/* Header */}
         <div className="flex flex-col items-center text-center space-y-3">
           <div className="relative">
-            <div className="absolute -inset-1 rounded-2xl bg-gradient-to-r from-emerald-500 to-cyan-500 opacity-30 blur-md" />
-            <div className="relative flex h-14 w-14 items-center justify-center rounded-2xl bg-slate-900 border border-emerald-500/30 text-emerald-400 shadow-xl">
+            <div className="absolute -inset-1 rounded-2xl bg-gradient-to-r from-indigo-500 to-violet-500 opacity-30 blur-md" />
+            <div className="relative flex h-14 w-14 items-center justify-center rounded-2xl bg-slate-900 border border-indigo-500/30 text-indigo-400 shadow-xl">
               <ShieldCheck className="h-7 w-7" />
             </div>
           </div>
 
           <div className="space-y-1">
             <div className="inline-flex items-center gap-2">
-              <Badge variant="outline" className="border-emerald-500/30 bg-emerald-500/10 text-emerald-400 text-[10px] font-bold px-2.5 py-0.5 uppercase tracking-wider">
+              <Badge variant="outline" className="border-indigo-500/30 bg-indigo-500/10 text-indigo-400 text-[10px] font-bold px-2.5 py-0.5 uppercase tracking-wider">
                 Platform Console
               </Badge>
-              <Badge variant="outline" className="border-cyan-500/30 bg-cyan-500/10 text-cyan-400 text-[10px] font-bold px-2.5 py-0.5 uppercase tracking-wider">
+              <Badge variant="outline" className="border-violet-500/30 bg-violet-500/10 text-violet-400 text-[10px] font-bold px-2.5 py-0.5 uppercase tracking-wider">
                 Super Admin
               </Badge>
             </div>
@@ -99,11 +99,11 @@ export default function PlatformLoginPage() {
         <div className="rounded-2xl border border-slate-800/80 bg-slate-900/80 p-6 sm:p-8 backdrop-blur-2xl shadow-2xl space-y-5">
           <div className="flex items-center justify-between pb-3 border-b border-slate-800/80">
             <div className="flex items-center gap-2 text-xs font-semibold text-slate-300">
-              <KeyRound className="h-4 w-4 text-emerald-400" />
+              <KeyRound className="h-4 w-4 text-indigo-400" />
               <span>Operator Authentication</span>
             </div>
-            <span className="flex items-center gap-1.5 text-[10px] text-emerald-400 font-bold bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20">
-              <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
+            <span className="flex items-center gap-1.5 text-[10px] text-indigo-400 font-bold bg-indigo-500/10 px-2 py-0.5 rounded border border-indigo-500/20">
+              <span className="h-1.5 w-1.5 rounded-full bg-indigo-400 animate-pulse" />
               Restricted Portal
             </span>
           </div>
@@ -121,7 +121,7 @@ export default function PlatformLoginPage() {
 
             <div className="space-y-1.5">
               <Label htmlFor="admin-email" className="text-xs font-semibold text-slate-300 flex items-center gap-1.5">
-                <Mail className="h-3.5 w-3.5 text-emerald-400" /> Operator Email
+                <Mail className="h-3.5 w-3.5 text-indigo-400" /> Operator Email
               </Label>
               <Input
                 id="admin-email"
@@ -129,15 +129,15 @@ export default function PlatformLoginPage() {
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="admin@orderrestro.com"
-                className="bg-slate-950/80 border-slate-800 text-white placeholder:text-slate-600 focus-visible:ring-emerald-500 h-10 text-sm"
+                placeholder="admin@restro.growthtechnos.com"
+                className="bg-slate-950/80 border-slate-800 text-white placeholder:text-slate-600 focus-visible:ring-indigo-500 h-10 text-sm"
               />
             </div>
 
             <div className="space-y-1.5">
               <div className="flex justify-between items-center">
                 <Label htmlFor="admin-password" className="text-xs font-semibold text-slate-300 flex items-center gap-1.5">
-                  <Lock className="h-3.5 w-3.5 text-emerald-400" /> Security Token / Password
+                  <Lock className="h-3.5 w-3.5 text-indigo-400" /> Security Token / Password
                 </Label>
               </div>
               <div className="relative">

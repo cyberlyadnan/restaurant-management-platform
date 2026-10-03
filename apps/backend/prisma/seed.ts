@@ -577,17 +577,19 @@ async function main() {
 
   console.log('Seeding Platform Super Admin...');
   const platformPasswordHash = await bcrypt.hash('admin123456', 10);
-  await prisma.platformUser.upsert({
-    where: { email: 'admin@orderrestro.com' },
-    update: {},
-    create: {
-      name: 'Platform Super Admin',
-      email: 'admin@orderrestro.com',
-      passwordHash: platformPasswordHash,
-      role: 'SUPER_ADMIN',
-      isActive: true,
-    },
-  });
+  for (const adminEmail of ['admin@restro.growthtechnos.com', 'admin@orderrestro.com']) {
+    await prisma.platformUser.upsert({
+      where: { email: adminEmail },
+      update: { passwordHash: platformPasswordHash },
+      create: {
+        name: 'Platform Super Admin',
+        email: adminEmail,
+        passwordHash: platformPasswordHash,
+        role: 'SUPER_ADMIN',
+        isActive: true,
+      },
+    });
+  }
 
   console.log('Ensuring all existing restaurants have active subscriptions...');
   const allRestaurants = await prisma.restaurant.findMany({
